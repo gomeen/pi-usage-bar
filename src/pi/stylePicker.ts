@@ -5,7 +5,7 @@
  * into the editor behind it.
  */
 import { DynamicBorder } from "@earendil-works/pi-coding-agent";
-import type { Component } from "@earendil-works/pi-tui";
+import { type Component, truncateToWidth } from "@earendil-works/pi-tui";
 import { renderStatus } from "../render/layout.js";
 import { applyColorOverrides, GRAPHITE } from "../render/theme.js";
 import type { Palette, UsageBarConfig, UsageSnapshot } from "../types.js";
@@ -21,13 +21,13 @@ export interface StyleVariant {
 export const STYLE_VARIANTS: readonly StyleVariant[] = [
 	{
 		id: "aurora-block",
-		label: "aurora block",
+		label: "Aurora block",
 		style: "aurora",
 		glyph: "block",
 	},
-	{ id: "aurora-thin", label: "aurora thin", style: "aurora", glyph: "thin" },
-	{ id: "ring", label: "ring", style: "ring", glyph: "block" },
-	{ id: "classic", label: "classic", style: "classic", glyph: "block" },
+	{ id: "aurora-thin", label: "Aurora thin", style: "aurora", glyph: "thin" },
+	{ id: "ring", label: "Ring", style: "ring", glyph: "block" },
+	{ id: "classic", label: "Classic", style: "classic", glyph: "block" },
 ];
 
 /** Fallback demo data so the picker always previews something. */
@@ -101,9 +101,9 @@ export class StylePickerComponent implements Component {
 	render(width: number): string[] {
 		const t = this.theme;
 		const lines: string[] = [
-			t.fg("accent", " usage-bar style"),
+			t.fg("accent", " Bar style"),
 			"",
-			t.fg("dim", " pick a look — previews use your live data"),
+			t.fg("dim", " Preview bar styles · Enter to apply"),
 			...this.border.render(width),
 			"",
 		];
@@ -111,7 +111,7 @@ export class StylePickerComponent implements Component {
 			const marker = i === this.selected ? "❯ " : "  ";
 			const head =
 				i === this.selected
-					? `${t.fg("accent", marker)}${t.fg("main", this.labels[i] ?? "")}`
+					? `${t.fg("accent", marker)}${t.fg("text", this.labels[i] ?? "")}`
 					: `${marker}${t.fg("dim", this.labels[i] ?? "")}`;
 			lines.push(`${head}   ${this.previews[i] ?? ""}`);
 		}
@@ -119,7 +119,7 @@ export class StylePickerComponent implements Component {
 		lines.push(...this.border.render(width));
 		lines.push("");
 		lines.push(t.fg("dim", " ↑↓ move · Enter apply · Esc cancel"));
-		return lines;
+		return lines.map((line) => truncateToWidth(line, width));
 	}
 
 	handleInput(data: string): void {

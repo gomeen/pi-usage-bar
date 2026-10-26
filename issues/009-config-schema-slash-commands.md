@@ -39,4 +39,4 @@ v1 配置 schema 定稿：全部键名与默认值（对齐 cs 命名 + `display
 
 另有 `PI_*_ENDPOINT` 环境变量覆盖端点（仅 env，不入文件）。
 
-**命令面（按用户后续反馈更新）**：只注册 `/usage` 一个斜杠命令，主菜单为 `Usage details` 和 `Settings`。前者选 provider 展开详情；后者进入 pi 原生 SettingsList，按 Look / Display / Data 收纳设置，Style picker 位于 Look 内。修改立即保存并应用，Esc 逐级返回；无用量数据也能进入设置。不再注册 `/usage-bar`；`--usage` CLI flag 一行 JSON：`{status: ok|unconfigured|unsupported|error, provider, plan, windows:[{label,percent,resetsAt}], balance?, fetchedAt}`——**永不包含任何凭据**。
+**命令面（按用户后续反馈更新）**：只注册 `/usage` 一个斜杠命令，主菜单为 `Usage details` 和 `Settings`。前者选 provider 展开详情；后者进入 pi 原生 SettingsList，按 Appearance / Display / Advanced 收纳设置，分类摘要使用可读描述和单位。Bar style 位于 Appearance 内，以实时预览统一选择 style 与 bar_glyph；Display 收纳套餐、重置信息、余额；Advanced 收纳刷新间隔与可进入的 Provider mapping 文件配置说明。UI 使用可读标签和 On/Off，JSON 键名和值保持兼容。修改立即保存并应用，Esc 逐级返回；无用量数据也能进入设置。不再注册 `/usage-bar`；`--usage` CLI flag 一行 JSON：`{status: ok|unconfigured|unsupported|error, provider, plan, windows:[{label,percent,resetsAt}], balance?, fetchedAt}`——**永不包含任何凭据**。

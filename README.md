@@ -34,7 +34,7 @@ Restart Pi (or `/reload`). Authenticate your plans through Pi's `/login` — the
 
 ## Configuration
 
-Everything lives in `~/.pi/agent/usage-bar.json` (sparse — only non-default keys are written). Edit it directly or open `/usage` → **Settings**. Choose **Look**, **Display**, or **Data** to change values with Enter/Space; changes save immediately. The live style preview is under **Look** → **Style picker**. Esc returns one level at a time. Structured `providerMap` entries are edited in the JSON file.
+Everything lives in `~/.pi/agent/usage-bar.json` (sparse — only non-default keys are written). Edit it directly or open `/usage` → **Settings**. Choose **Appearance**, **Display**, or **Advanced** to change values with Enter/Space; changes save immediately. **Appearance** → **Bar style** previews and selects all four styles. **Display** controls visible plans, reset information, and balances. **Advanced** contains the refresh interval and **Provider mapping** instructions for editing `providerMap` in the JSON file. Esc returns one level at a time.
 
 | Key | Default | Meaning |
 |---|---|---|

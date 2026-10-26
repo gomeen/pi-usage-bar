@@ -34,7 +34,7 @@ pi install npm:@gomeen/pi-usage-bar
 
 ## 配置
 
-配置在 `~/.pi/agent/usage-bar.json`（稀疏写入——只存非默认键）。可以直接改文件，也可以打开 `/usage` → **Settings**，再选择 **Look**、**Display** 或 **Data**。Enter/Space 切换值并立即保存，样式预览在 **Look** → **Style picker** 中，Esc 逐级返回。结构化的 `providerMap` 条目在 JSON 文件中编辑。
+配置在 `~/.pi/agent/usage-bar.json`（稀疏写入——只存非默认键）。可以直接改文件，也可以打开 `/usage` → **Settings**，再选择 **Appearance**（外观）、**Display**（显示内容）或 **Advanced**（高级）。Enter/Space 切换值并立即保存。**Appearance** → **Bar style** 实时预览并选择四种样式；**Display** 管理显示套餐、重置信息和余额；**Advanced** 包含刷新间隔和 **Provider mapping** 配置说明，结构化的 `providerMap` 条目仍在 JSON 文件中编辑。Esc 逐级返回。
 
 | 键 | 默认 | 含义 |
 |---|---|---|

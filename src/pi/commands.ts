@@ -5,6 +5,7 @@ import {
 	type SettingItem,
 	SettingsList,
 	type SettingsListTheme,
+	Text,
 } from "@earendil-works/pi-tui";
 import { configFilePath, loadConfig, sparseSave } from "../config.js";
 import { planDisplayLabel } from "../detect.js";
@@ -109,144 +110,159 @@ async function showUsageDetails(
 interface Setting {
 	id: string;
 	label: string;
-	description?: string;
+	description: string;
 	read(cfg: UsageBarConfig): string;
 	write(cfg: UsageBarConfig, value: string): void;
-	values(): string[];
+	values: string[];
 }
 
 const SETTINGS: readonly Setting[] = [
 	{
-		id: "style",
-		label: "style",
-		description: "Bar look family",
-		read: (c) => c.style,
-		write: (c, v) => {
-			c.style = v as UsageBarConfig["style"];
-		},
-		values: () => ["aurora", "ring", "classic"],
-	},
-	{
-		id: "bar_glyph",
-		label: "bar_glyph",
-		description: "aurora cell glyph",
-		read: (c) => c.bar_glyph,
-		write: (c, v) => {
-			c.bar_glyph = v as UsageBarConfig["bar_glyph"];
-		},
-		values: () => ["block", "thin"],
-	},
-	{
 		id: "theme",
-		label: "theme",
-		description: "graphite palette, or follow your pi theme",
-		read: (c) => c.theme,
+		label: "Color theme",
+		description: "Use the Graphite palette or follow your Pi theme.",
+		read: (c) => (c.theme === "pi" ? "Pi theme" : "Graphite"),
 		write: (c, v) => {
-			c.theme = v as UsageBarConfig["theme"];
+			c.theme = v === "Pi theme" ? "pi" : "graphite";
 		},
-		values: () => ["graphite", "pi"],
+		values: ["Graphite", "Pi theme"],
 	},
 	{
 		id: "density",
-		label: "density",
-		description: "Spacing between segments",
-		read: (c) => c.density,
+		label: "Spacing",
+		description: "Space between usage windows and provider segments.",
+		read: (c) =>
+			c.density === "compact"
+				? "Compact"
+				: c.density === "cozy"
+					? "Cozy"
+					: "Regular",
 		write: (c, v) => {
-			c.density = v as UsageBarConfig["density"];
+			c.density =
+				v === "Compact" ? "compact" : v === "Cozy" ? "cozy" : "regular";
 		},
-		values: () => ["compact", "regular", "cozy"],
+		values: ["Compact", "Regular", "Cozy"],
 	},
 	{
 		id: "bar_width",
-		label: "bar_width",
-		description: "Cells per bar",
-		read: (c) => String(c.bar_width),
+		label: "Bar width",
+		description: "Number of cells in each usage bar.",
+		read: (c) => `${c.bar_width} cells`,
 		write: (c, v) => {
 			const n = Number.parseInt(v, 10);
 			if (Number.isFinite(n)) c.bar_width = n;
 		},
-		values: () => ["8", "10", "12", "16"],
+		values: ["8 cells", "10 cells", "12 cells", "16 cells"],
 	},
 	{
 		id: "display.mode",
-		label: "display.mode",
-		description: "active = only the current plan; all = every configured plan",
-		read: (c) => c.display.mode,
+		label: "Show plans",
+		description: "Show all configured plans or only the current model's plan.",
+		read: (c) => (c.display.mode === "all" ? "All plans" : "Current plan"),
 		write: (c, v) => {
-			c.display.mode = v as UsageBarConfig["display"]["mode"];
+			c.display.mode = v === "All plans" ? "all" : "active";
 		},
-		values: () => ["active", "all"],
+		values: ["All plans", "Current plan"],
 	},
 	{
 		id: "display.compact_others",
-		label: "display.compact_others",
-		description: "Collapse non-active plans into one summary line",
-		read: (c) => String(c.display.compact_others),
+		label: "Compact other plans",
+		description:
+			"When showing all plans, combine non-active plans into one summary line.",
+		read: (c) => (c.display.compact_others ? "On" : "Off"),
 		write: (c, v) => {
-			c.display.compact_others = v === "true";
+			c.display.compact_others = v === "On";
 		},
-		values: () => ["true", "false"],
+		values: ["On", "Off"],
 	},
 	{
 		id: "show_reset_countdown",
-		label: "show_reset_countdown",
-		description: "Per-window ⏰ reset countdowns",
-		read: (c) => String(c.show_reset_countdown),
+		label: "Reset countdown",
+		description: "Show the time remaining until each quota window resets.",
+		read: (c) => (c.show_reset_countdown ? "On" : "Off"),
 		write: (c, v) => {
-			c.show_reset_countdown = v === "true";
+			c.show_reset_countdown = v === "On";
 		},
-		values: () => ["true", "false"],
+		values: ["On", "Off"],
 	},
 	{
 		id: "show_resets",
-		label: "show_resets",
-		description: "Official Codex reset announcements (codex-resets.com)",
-		read: (c) => String(c.show_resets),
+		label: "Codex reset announcements",
+		description:
+			"Show official Codex reset announcements from codex-resets.com.",
+		read: (c) => (c.show_resets ? "On" : "Off"),
 		write: (c, v) => {
-			c.show_resets = v === "true";
+			c.show_resets = v === "On";
 		},
-		values: () => ["true", "false"],
+		values: ["On", "Off"],
 	},
 	{
 		id: "show_balance",
-		label: "show_balance",
-		description: "Relay balance probing",
-		read: (c) => String(c.show_balance),
+		label: "Relay balance",
+		description: "Query and display the remaining balance for relay providers.",
+		read: (c) => (c.show_balance ? "On" : "Off"),
 		write: (c, v) => {
-			c.show_balance = v === "true";
+			c.show_balance = v === "On";
 		},
-		values: () => ["true", "false"],
+		values: ["On", "Off"],
 	},
 	{
 		id: "currency",
-		label: "currency",
-		description: "Balance unit",
+		label: "Currency symbol",
+		description:
+			"Symbol shown next to relay balances; this does not convert amounts.",
 		read: (c) => c.currency,
 		write: (c, v) => {
 			c.currency = v;
 		},
-		values: () => ["$", "¥", "€"],
+		values: ["$", "¥", "€"],
 	},
 	{
 		id: "refresh_minutes",
-		label: "refresh_minutes",
-		description: "Poll interval",
-		read: (c) => String(c.refresh_minutes),
+		label: "Refresh interval",
+		description: "How often provider usage is refreshed.",
+		read: (c) => `${c.refresh_minutes} min`,
 		write: (c, v) => {
 			const n = Number.parseInt(v, 10);
 			if (Number.isFinite(n) && n >= 1) c.refresh_minutes = n;
 		},
-		values: () => ["1", "2", "5", "10"],
+		values: ["1 min", "2 min", "5 min", "10 min"],
 	},
 ];
 
-const SECTIONS: readonly { header: string; ids: readonly string[] }[] = [
+function styleIndex(cfg: UsageBarConfig): number {
+	return Math.max(
+		0,
+		STYLE_VARIANTS.findIndex(
+			(v) =>
+				v.style === cfg.style &&
+				(v.style !== "aurora" || v.glyph === cfg.bar_glyph),
+		),
+	);
+}
+
+function styleLabel(cfg: UsageBarConfig): string {
+	return STYLE_VARIANTS[styleIndex(cfg)]?.label ?? "";
+}
+
+interface SettingsSection {
+	label: string;
+	description: string;
+	ids: readonly string[];
+	summary(cfg: UsageBarConfig): string;
+}
+
+const SECTIONS: readonly SettingsSection[] = [
 	{
-		header: "Look",
-		ids: ["style", "bar_glyph", "theme", "density", "bar_width"],
+		label: "Appearance",
+		description: "Bar style, color theme, spacing, and width.",
+		ids: ["theme", "density", "bar_width"],
+		summary: (cfg) =>
+			`${styleLabel(cfg)} · ${cfg.theme === "pi" ? "Pi theme" : "Graphite"}`,
 	},
 	{
-		header: "Display",
+		label: "Display",
+		description: "Visible plans, reset information, and relay balances.",
 		ids: [
 			"display.mode",
 			"display.compact_others",
@@ -255,211 +271,151 @@ const SECTIONS: readonly { header: string; ids: readonly string[] }[] = [
 			"show_balance",
 			"currency",
 		],
+		summary: (cfg) =>
+			cfg.display.mode === "active"
+				? "Current plan"
+				: `All plans · ${cfg.display.compact_others ? "Compact others" : "Full details"}`,
 	},
-	{ header: "Data", ids: ["refresh_minutes"] },
+	{
+		label: "Advanced",
+		description: "Refresh interval and custom provider mapping.",
+		ids: ["refresh_minutes"],
+		summary: (cfg) => `Refresh every ${cfg.refresh_minutes} min`,
+	},
 ];
 
-/**
- * Settings — hierarchical, pi-style: the top level lists
- * categories (select to enter); each category is its own SettingsList of
- * settings that apply live. providerMap stays file-edited.
- */
 export async function runConfigCommand(
 	ui: CommandUIContext,
 	onChanged: (cfg: UsageBarConfig) => void,
 	snapshots: UsageSnapshot[] = [],
 ): Promise<void> {
 	const cfg = loadConfig();
-
 	await ui.custom<null>((tui, theme, keybindings, done) => {
-		// Build the list theme from the factory-passed theme object — the
-		// global theme inside getSettingsListTheme() may be undefined when
-		// this extension loads via jiti (DynamicBorder carries the same note).
 		const th = theme as { fg(token: string, text: string): string };
 		const listTheme: SettingsListTheme = {
 			label: (text, selected) => (selected ? th.fg("accent", text) : text),
-			value: (text, selected) =>
-				selected ? th.fg("accent", text) : th.fg("muted", text),
+			value: (text, selected) => th.fg(selected ? "accent" : "muted", text),
 			description: (text) => th.fg("dim", text),
 			cursor: th.fg("accent", "→ "),
 			hint: (text) => th.fg("dim", text),
 		};
 		const requestRender = () =>
 			(tui as { requestRender(): void }).requestRender();
-
-		const apply = (id: string, value: string): void => {
-			const setting = SETTINGS.find((st) => st.id === id);
-			if (!setting) return;
-			setting.write(cfg, value);
+		const save = () => {
 			sparseSave(cfg);
 			onChanged(cfg);
 		};
-
-		const settingItems = (ids: readonly string[]): SettingItem[] =>
-			ids.flatMap((id) => {
-				const setting = SETTINGS.find((st) => st.id === id);
-				if (!setting) return [];
-				return [
-					{
-						id: setting.id,
-						label: setting.label,
-						...(setting.description
-							? { description: setting.description }
-							: {}),
-						currentValue: setting.read(cfg),
-						values: setting.values(),
-					},
-				];
-			});
-
-		const summary = (ids: readonly string[]): string =>
-			ids
-				.flatMap((id) => SETTINGS.find((st) => st.id === id))
-				.slice(0, 2)
-				.map((st) => st?.read(cfg))
-				.filter(Boolean)
-				.join(" · ");
-
-		let root: SettingsList;
-
-		const categoryItem = (section: {
-			header: string;
-			ids: readonly string[];
-		}): SettingItem => ({
-			id: section.header,
-			label: section.header,
-			description: section.ids.join(" · "),
-			currentValue: summary(section.ids),
+		const categoryItem = (section: SettingsSection): SettingItem => ({
+			id: section.label,
+			label: section.label,
+			description: section.description,
+			currentValue: section.summary(cfg),
 			submenu: (_currentValue, submenuDone) => {
-				let sub: SettingsList;
-				const items = settingItems(section.ids);
-				if (section.header === "Look") {
-					items.unshift(
-						makeStylePickerItem(
-							cfg,
-							snapshots,
-							keybindings,
-							requestRender,
-							(result) => {
-								if (!result) return;
-								cfg.style = result.style;
-								cfg.bar_glyph = result.glyph;
-								sparseSave(cfg);
-								onChanged(cfg);
-								sub.updateValue("style-picker", result.label);
-								sub.updateValue("style", cfg.style);
-								sub.updateValue("bar_glyph", cfg.bar_glyph);
-							},
-							listTheme,
-						),
-					);
+				const settings = SETTINGS.filter((setting) =>
+					section.ids.includes(setting.id),
+				);
+				const items: SettingItem[] = settings.map((setting) => ({
+					id: setting.id,
+					label: setting.label,
+					description: setting.description,
+					currentValue: setting.read(cfg),
+					values: setting.values,
+				}));
+				if (section.label === "Appearance") {
+					items.unshift({
+						id: "bar-style",
+						label: "Bar style",
+						description: "Preview and choose a bar style with your usage data.",
+						currentValue: styleLabel(cfg),
+						submenu: (_value, styleDone) => {
+							const palette = applyColorOverrides(
+								GRAPHITE,
+								cfg.color_ok,
+								cfg.color_warn,
+								cfg.color_hot,
+							);
+							return new StylePickerComponent(
+								keybindings,
+								requestRender,
+								buildVariantPreviews(snapshots, cfg, palette, Date.now()),
+								STYLE_VARIANTS.map((v) => v.label),
+								styleIndex(cfg),
+								(result) => {
+									if (result) {
+										cfg.style = result.style;
+										cfg.bar_glyph = result.glyph;
+										save();
+									}
+									styleDone(result?.label);
+								},
+								th,
+								new DynamicBorder((text: string) => th.fg("accent", text)),
+							);
+						},
+					});
 				}
-				sub = new SettingsList(
+				if (section.label === "Advanced") {
+					const mappingCount = Object.keys(cfg.providerMap).length;
+					items.push({
+						id: "providerMap",
+						label: "Provider mapping",
+						description:
+							"View instructions for mapping custom providers in the configuration file.",
+						currentValue: `${mappingCount} ${mappingCount === 1 ? "mapping" : "mappings"}`,
+						submenu: (_value, mappingDone) => {
+							const text = new Text(
+								[
+									th.fg("accent", "Provider mapping"),
+									"",
+									"Edit providerMap in:",
+									configFilePath(),
+									"",
+									'Example: { "providerMap": { "my-provider": "zai-cn" } }',
+									"",
+									"Run /reload after saving the file.",
+									"",
+									th.fg("dim", "Enter or Esc to return"),
+								].join("\n"),
+								1,
+								0,
+							);
+							return {
+								render: (width) => text.render(width),
+								invalidate: () => text.invalidate(),
+								handleInput: (data) => {
+									if (
+										keybindings.matches(data, "tui.select.cancel") ||
+										keybindings.matches(data, "tui.select.confirm")
+									)
+										mappingDone();
+								},
+							};
+						},
+					});
+				}
+				return new SettingsList(
 					items,
 					12,
 					listTheme,
-					(id, newValue) => {
-						apply(id, newValue);
-						const setting = SETTINGS.find((st) => st.id === id);
-						if (setting) sub.updateValue(id, setting.read(cfg));
+					(id, value) => {
+						const setting = settings.find((s) => s.id === id);
+						if (setting) {
+							setting.write(cfg, value);
+							save();
+						}
 					},
-					() => {
-						root.updateValue(section.header, summary(section.ids));
-						submenuDone();
-					},
+					() => submenuDone(section.summary(cfg)),
+					{ enableSearch: true },
 				);
-				return sub;
 			},
 		});
-
-		const items: SettingItem[] = [
-			...SECTIONS.map(categoryItem),
-			{
-				id: "providerMap",
-				label: "providerMap",
-				description: `Custom provider mapping — edit ${configFilePath()}`,
-				currentValue: `${Object.keys(cfg.providerMap).length} entries`,
-			},
-		];
-
-		root = new SettingsList(
-			items,
+		return new SettingsList(
+			SECTIONS.map(categoryItem),
 			12,
 			listTheme,
-			(_id, _newValue) => {
-				// categories open submenus; nothing cycles at the root level
-			},
+			() => {},
 			() => done(null),
 			{ enableSearch: true },
 		);
-		return root;
 	});
-}
-
-/** Style-picker entry: opens the live-preview submenu component. */
-function makeStylePickerItem(
-	cfg: UsageBarConfig,
-	snapshots: UsageSnapshot[],
-	keybindings: { matches(data: string, action: string): boolean },
-	requestRender: () => void,
-	onPick: (
-		result: {
-			id: string;
-			label: string;
-			style: UsageBarConfig["style"];
-			glyph: UsageBarConfig["bar_glyph"];
-		} | null,
-	) => void,
-	listTheme: SettingsListTheme,
-): SettingItem {
-	const palette = applyColorOverrides(
-		GRAPHITE,
-		cfg.color_ok,
-		cfg.color_warn,
-		cfg.color_hot,
-	);
-	const previews = buildVariantPreviews(snapshots, cfg, palette, Date.now());
-	const labels = STYLE_VARIANTS.map((v) => v.label);
-	const currentIndex = () =>
-		Math.max(
-			0,
-			STYLE_VARIANTS.findIndex(
-				(v) =>
-					v.style === cfg.style &&
-					(v.style !== "aurora" || v.glyph === cfg.bar_glyph),
-			),
-		);
-	const currentLabel = STYLE_VARIANTS[currentIndex()]?.label ?? "";
-	const pickerTheme = pickerThemeFrom(listTheme);
-	return {
-		id: "style-picker",
-		label: "Style picker",
-		description: "Preview every look with your live data",
-		currentValue: currentLabel,
-		submenu: (_currentValue, submenuDone) =>
-			new StylePickerComponent(
-				keybindings,
-				requestRender,
-				previews,
-				labels,
-				currentIndex(),
-				(result) => {
-					onPick(result);
-					submenuDone(result?.label);
-				},
-				pickerTheme,
-				new DynamicBorder((str: string) => pickerTheme.fg("dim", str)),
-			),
-	};
-}
-
-function pickerThemeFrom(listTheme: SettingsListTheme): {
-	fg(token: string, text: string): string;
-} {
-	// Reuse the settings list's own styler for picker chrome.
-	const style = (text: string, selected: boolean) =>
-		listTheme.label(text, selected);
-	return {
-		fg: (token: string, text: string) => style(text, token === "accent"),
-	};
 }
