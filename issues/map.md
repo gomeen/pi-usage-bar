@@ -21,6 +21,7 @@ status: open
 ## Decisions so far
 
 - [Charting decisions locked](001-charting-decisions-locked.md): 发布级目标、从零写、v1 四家 provider、cs 同款样式全 look 可配、三层配置、默认只显当前 plan、providerMap 手动映射、graphite 默认可切 pi 主题、v1 无附加 segments、v1 只英文。
+- [Research cs/cxs style and config spec](007-research-cs-style-config-spec.md): 四种 look 逐段规格 + graphite 精确 RGB + severity 取色梯 + cs/cxs 全配置键表成文；cs/cxs 的 s_ok 绿色 vs 青绿差异留给样式原型票定。
 
 ## Not yet specified
 
