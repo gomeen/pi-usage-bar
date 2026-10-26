@@ -343,9 +343,9 @@ const SECTIONS: readonly { header: string; ids: readonly string[] }[] = [
 ];
 
 /**
- * /usage-bar settings — a pi-style SettingsList (searchable, Enter cycles
- * values, live apply) with section headers, plus a live-preview style picker
- * submenu. providerMap stays file-edited (structured data; noted in-list).
+ * /usage-bar settings — hierarchical, pi-style: the top level lists
+ * categories (select to enter); each category is its own SettingsList of
+ * settings that apply live. providerMap stays file-edited.
  */
 export async function runConfigCommand(
 	ui: CommandUIContext,
@@ -371,62 +371,105 @@ export async function runConfigCommand(
 			(tui as { requestRender(): void }).requestRender();
 
 		const apply = (id: string, value: string): void => {
-			const setting = SETTINGS.find((s) => s.id === id);
+			const setting = SETTINGS.find((st) => st.id === id);
 			if (!setting) return;
 			setting.write(cfg, value);
 			sparseSave(cfg);
 			onChanged(cfg);
 		};
 
-		const items: SettingItem[] = [];
-		const pickerSetting = makeStylePickerItem(
-			cfg,
-			snapshots,
-			keybindings,
-			requestRender,
-			apply,
-			listTheme,
-		);
-		items.push(pickerSetting);
-		for (const section of SECTIONS) {
-			items.push({
-				id: `header:${section.header}`,
-				label: `— ${section.header} —`,
-				currentValue: "",
+		const settingItems = (ids: readonly string[]): SettingItem[] =>
+			ids.flatMap((id) => {
+				const setting = SETTINGS.find((st) => st.id === id);
+				if (!setting) return [];
+				return [
+					{
+						id: setting.id,
+						label: setting.label,
+						...(setting.description
+							? { description: setting.description }
+							: {}),
+						currentValue: setting.read(cfg),
+						values: setting.values(),
+					},
+				];
 			});
-			for (const id of section.ids) {
-				const setting = SETTINGS.find((s) => s.id === id);
-				if (!setting) continue;
-				items.push({
-					id: setting.id,
-					label: setting.label,
-					...(setting.description ? { description: setting.description } : {}),
-					currentValue: setting.read(cfg),
-					values: setting.values(),
-				});
-			}
-		}
-		items.push({
-			id: "providerMap",
-			label: "providerMap",
-			description: `Custom provider mapping — edit ${configFilePath()}`,
-			currentValue: `${Object.keys(cfg.providerMap).length} entries`,
+
+		const summary = (ids: readonly string[]): string =>
+			ids
+				.flatMap((id) => SETTINGS.find((st) => st.id === id))
+				.slice(0, 2)
+				.map((st) => st?.read(cfg))
+				.filter(Boolean)
+				.join(" · ");
+
+		let root: SettingsList;
+
+		const categoryItem = (section: {
+			header: string;
+			ids: readonly string[];
+		}): SettingItem => ({
+			id: section.header,
+			label: section.header,
+			description: section.ids.join(" · "),
+			currentValue: summary(section.ids),
+			submenu: (_currentValue, submenuDone) => {
+				let sub: SettingsList;
+				sub = new SettingsList(
+					settingItems(section.ids),
+					12,
+					listTheme,
+					(id, newValue) => {
+						apply(id, newValue);
+						const setting = SETTINGS.find((st) => st.id === id);
+						if (setting) sub.updateValue(id, setting.read(cfg));
+					},
+					() => {
+						root.updateValue(section.header, summary(section.ids));
+						submenuDone();
+					},
+				);
+				return sub;
+			},
 		});
 
-		const list = new SettingsList(
+		const items: SettingItem[] = [
+			makeStylePickerItem(
+				cfg,
+				snapshots,
+				keybindings,
+				requestRender,
+				(result) => {
+					if (result) {
+						cfg.style = result.style;
+						cfg.bar_glyph = result.glyph;
+						sparseSave(cfg);
+						onChanged(cfg);
+						root.updateValue("style-picker", result.label);
+					}
+				},
+				listTheme,
+			),
+			...SECTIONS.map(categoryItem),
+			{
+				id: "providerMap",
+				label: "providerMap",
+				description: `Custom provider mapping — edit ${configFilePath()}`,
+				currentValue: `${Object.keys(cfg.providerMap).length} entries`,
+			},
+		];
+
+		root = new SettingsList(
 			items,
-			14,
+			12,
 			listTheme,
-			(id, newValue) => {
-				apply(id, newValue);
-				const setting = SETTINGS.find((s) => s.id === id);
-				if (setting) list.updateValue(id, setting.read(cfg));
-				requestRender();
+			(_id, _newValue) => {
+				// categories open submenus; nothing cycles at the root level
 			},
 			() => done(null),
 			{ enableSearch: true },
 		);
-		return list;
+		return root;
 	});
 }
 
@@ -436,7 +479,14 @@ function makeStylePickerItem(
 	snapshots: UsageSnapshot[],
 	keybindings: { matches(data: string, action: string): boolean },
 	requestRender: () => void,
-	apply: (id: string, value: string) => void,
+	onPick: (
+		result: {
+			id: string;
+			label: string;
+			style: UsageBarConfig["style"];
+			glyph: UsageBarConfig["bar_glyph"];
+		} | null,
+	) => void,
 	listTheme: SettingsListTheme,
 ): SettingItem {
 	const palette = applyColorOverrides(
@@ -454,6 +504,7 @@ function makeStylePickerItem(
 		),
 	);
 	const currentLabel = STYLE_VARIANTS[currentIndex]?.label ?? "";
+	const pickerTheme = pickerThemeFrom(listTheme);
 	return {
 		id: "style-picker",
 		label: "Style picker",
@@ -467,24 +518,16 @@ function makeStylePickerItem(
 				labels,
 				currentIndex,
 				(result) => {
-					if (result) {
-						cfg.style = result.style;
-						cfg.bar_glyph = result.glyph;
-						sparseSave(cfg);
-						apply("style", result.style);
-						apply("bar_glyph", result.glyph);
-					}
+					onPick(result);
 					submenuDone();
 				},
-				pickerThemeFrom(listTheme),
-				new DynamicBorder((str: string) =>
-					pickerThemeFrom(listTheme).fg("dim", str),
-				),
+				pickerTheme,
+				new DynamicBorder((str: string) => pickerTheme.fg("dim", str)),
 			),
 	};
 }
 
-function pickerThemeFrom(listTheme: ReturnType<typeof getSettingsListTheme>): {
+function pickerThemeFrom(listTheme: SettingsListTheme): {
 	fg(token: string, text: string): string;
 } {
 	// Reuse the settings list's own styler for picker chrome.
