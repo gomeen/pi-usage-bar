@@ -384,18 +384,17 @@ export function renderStatus(
 		}
 		const rest = visible.filter((s) => s !== activeSnap);
 		const present = new Set(visible.map((s) => s.plan));
-		const nameWidth = Math.max(
-			...visible.map((s) => displayName(s, present).length),
-		);
 		// The active line carries its name too — an anonymous bar row reads
-		// as "not the current plan" even though it is.
+		// as "not the current plan" even though it is. No column padding:
+		// it is the only full row, so name + single space matches the
+		// compact line's rhythm instead of aligning to the longest name.
 		const activeSeg = renderSegment(
 			activeSnap,
 			config,
 			palette,
 			now,
 			true,
-			nameWidth,
+			0,
 			present,
 		);
 		const items = rest.map((s) =>
