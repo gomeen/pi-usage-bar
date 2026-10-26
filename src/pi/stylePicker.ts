@@ -86,7 +86,7 @@ interface ThemeLike {
 	fg(token: string, text: string): string;
 }
 
-class StylePickerComponent implements Component {
+export class StylePickerComponent implements Component {
 	constructor(
 		private keybindings: { matches(data: string, action: string): boolean },
 		private requestRender: () => void,
