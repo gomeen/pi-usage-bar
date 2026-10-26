@@ -24,6 +24,8 @@ status: open
 - [Research cs/cxs style and config spec](007-research-cs-style-config-spec.md): 四种 look 逐段规格 + graphite 精确 RGB + severity 取色梯 + cs/cxs 全配置键表成文；cs/cxs 的 s_ok 绿色 vs 青绿差异留给样式原型票定。
 - [Research ZAI usage API data contract](004-research-zai-usage-api.md): `/api/monitor/usage/quota/limit` 双平台同路径，`limits[]` 里 unit:3=5h 窗、unit:6=周窗，percentage 0-100，nextResetTime epoch 毫秒；429 与 401 响应体形状无文档。
 - [Research pi extension API and packaging surface](006-research-pi-extension-api.md): 生命周期/setStatus 单行共享截断语义/命令注册/modelRegistry 凭据路径/打包规范成文；四家内置 provider ID 全表拿到；发现 `openai` vs legacy `openai-codex` 订阅凭据归属疑点，留给检测票。
+- [Research Codex usage API data contract](002-research-codex-usage-api.md): `/wham/usage` 端点 + 官方 CLI 源码背书的窗口对象（used_percent/limit_window_seconds/reset_at epoch秒）；窗口按 18000s/604800s 时长分类；429 形状清楚；每计划窗口矩阵无权威来源，按存在性渲染。
+- [Research MiniMax usage API data contract](005-research-minimax-usage-api.md): 现行 token_plan/remains + legacy 端点；2062=无 Token Plan；reset 靠 epoch 优先 + remains_time 单位启发式；`current_interval_usage_count` 新旧语义冲突需百分比消歧；hknet services[] 形状无佐证。
 
 ## Not yet specified
 
