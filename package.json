@@ -16,6 +16,20 @@
 			"./src/index.ts"
 		]
 	},
+	"files": [
+		"src",
+		"README.md",
+		"README.zh.md",
+		"LICENSE"
+	],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/gomeen/pi-usage-bar.git"
+	},
+	"bugs": {
+		"url": "https://github.com/gomeen/pi-usage-bar/issues"
+	},
+	"homepage": "https://github.com/gomeen/pi-usage-bar#readme",
 	"peerDependencies": {
 		"@earendil-works/pi-ai": "*",
 		"@earendil-works/pi-coding-agent": "*",
