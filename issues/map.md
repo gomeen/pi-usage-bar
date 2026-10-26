@@ -37,13 +37,20 @@ status: open
 - [Toolchain and scaffold lock](011-toolchain-scaffold.md): 一个深模块（UsageSnapshot 管线）+ 三条缝（数据/渲染/pi 适配）；vitest + 零运行时依赖 + biome + TS 源码直发；四层测试（fixture/golden/集成/冒烟）；CI=typecheck→test→pack 验证。
 - [Provider detection and providerMap spec](008-provider-detection-mapping-spec.md): Codex 凭据走新 ID `openai`（实测 oauth 类型佐证）；自动映射表+手动 providerMap 优先+自定义 ID 自动探中转站；网关场景显示实际扣钱账户；凭据判别优先文档化信号、歧义双试隔离 compat。
 - [Config schema and slash command surface](009-config-schema-slash-commands.md): 单一全局 `~/.pi/agent/usage-bar.json` 稀疏写入；16 键全量键表定稿；`/usage-bar` 纯对话框式；`--usage` 一行 JSON 永不含凭据。
+- [Robustness spec](014-robustness-spec.md): Claude 按 Retry-After 退避、其他家 1→5→15 分钟；stale=3 倍刷新间隔标⟳、超 1 小时变暗；多进程共享缓存+锁；MiniMax reset 三级兜底绝不编造；每家错误隔离。
+- [Release process](015-release-process.md): 包名 `@gomeen/pi-usage-bar`（裸名已被占）；`pi-package` 关键字进 pi.dev/packages 画廊；发版全自动（tag→CI→publish，需 NPM_TOKEN secret）；README.md 英文 + README.zh.md 中文互链，致谢带仓库链接。
 
 ## Not yet specified
 
-- Claude `extra_usage`（按量溢出额度）字段语义——社区未完全确认，确认后再决定显示。
+（无——v1 实现前决策全部锁定，2026-10-26 地图完成）
+
+## Not yet specified
+
+（无——v1 实现前决策全部锁定，2026-10-26 地图完成）
 
 ## Out of scope
 
+- Claude `extra_usage`（按量溢出额度）显示：v1 不做；官方/社区语义确认后作为后续版本功能再加。
 - v1 附加 segments：模型名、context 条、prompt-cache 倒计时（Claude Code 专属概念）、成本显示。
 - v1 之外的 provider：Kimi、Moonshot、DeepSeek、OpenRouter、xAI、Baseten、Vercel、Fireworks 等（后续版本再议）。
 - i18n 多语言界面（v1 只英文，README 中英双语）。
