@@ -665,5 +665,5 @@ it("compact mode: active full, others as one summary line", () => {
 	// active (zai) renders full with bars; codex collapses to name + percents
 	expect(l0).toContain("5h");
 	expect(l0).toContain("■");
-	expect(l1).toBe("Codex 17%·3%");
+	expect(l1).toBe("Codex 5h·17%/7d·3%");
 });

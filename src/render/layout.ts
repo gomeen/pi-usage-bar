@@ -224,7 +224,18 @@ function hasContent(snap: UsageSnapshot, config: UsageBarConfig): boolean {
 	return snap.announcement !== undefined && config.show_resets;
 }
 
-/** Compact one-line item for a non-active plan: `Name 17%·3%` / `name $200`. */
+/**
+ * The plan kind the active provider maps to, taken from its own snapshot
+ * when present (the snapshot may be hidden from `visible`, so search all).
+ */
+function activePlanFor(
+	snapshots: UsageSnapshot[],
+	activeProvider: string,
+): PlanKind | null {
+	return snapshots.find((s) => s.provider === activeProvider)?.plan ?? null;
+}
+
+/** Compact one-line item for a non-active plan: `Name 5h·17%/7d·3%`. */
 function compactItem(
 	snap: UsageSnapshot,
 	config: UsageBarConfig,
@@ -243,7 +254,9 @@ function compactItem(
 			config.warning_threshold,
 			config.critical_threshold,
 		);
-		bits.push(`${fg(sev ?? palette.ink)}${Math.round(w.percent)}%${RESET}`);
+		bits.push(
+			`${fg(palette.mute)}${w.label}·${RESET}${fg(sev ?? palette.ink)}${Math.round(w.percent)}%${RESET}`,
+		);
 	}
 	if (snap.balance !== undefined) {
 		bits.push(
@@ -254,7 +267,7 @@ function compactItem(
 		return null;
 	}
 	let item = `${fg(palette.mute)}${displayName(snap)}${RESET} ${bits.join(
-		`${fg(palette.mute)}·${RESET}`,
+		`${fg(palette.mute)}/${RESET}`,
 	)}`;
 	if (now - snap.fetchedAt > config.refresh_minutes * 3 * 60_000) {
 		item += ` ${fg(palette.mute)}⟳${RESET}`;
@@ -345,8 +358,13 @@ export function renderStatus(
 		activeProvider !== undefined &&
 		activeProvider !== ""
 	) {
+		const activePlan = activePlanFor(snapshots, activeProvider);
 		const active =
-			visible.find((s) => s.provider === activeProvider) ?? visible[0];
+			visible.find((s) => s.provider === activeProvider) ??
+			(activePlan === null
+				? undefined
+				: visible.find((s) => s.plan === activePlan)) ??
+			visible[0];
 		if (!active) {
 			return [];
 		}
@@ -357,7 +375,9 @@ export function renderStatus(
 		if (activeSeg !== null) {
 			lines.push(activeSeg);
 		}
-		const summary = items.filter((i) => i !== null).join("   ");
+		const summary = items
+			.filter((i) => i !== null)
+			.join(`${fg(palette.edge)} │ ${RESET}`);
 		if (summary !== "") {
 			lines.push(summary);
 		}
