@@ -22,6 +22,8 @@ status: open
 
 - [Charting decisions locked](001-charting-decisions-locked.md): 发布级目标、从零写、v1 四家 provider、cs 同款样式全 look 可配、三层配置、默认只显当前 plan、providerMap 手动映射、graphite 默认可切 pi 主题、v1 无附加 segments、v1 只英文。
 - [Research cs/cxs style and config spec](007-research-cs-style-config-spec.md): 四种 look 逐段规格 + graphite 精确 RGB + severity 取色梯 + cs/cxs 全配置键表成文；cs/cxs 的 s_ok 绿色 vs 青绿差异留给样式原型票定。
+- [Research ZAI usage API data contract](004-research-zai-usage-api.md): `/api/monitor/usage/quota/limit` 双平台同路径，`limits[]` 里 unit:3=5h 窗、unit:6=周窗，percentage 0-100，nextResetTime epoch 毫秒；429 与 401 响应体形状无文档。
+- [Research pi extension API and packaging surface](006-research-pi-extension-api.md): 生命周期/setStatus 单行共享截断语义/命令注册/modelRegistry 凭据路径/打包规范成文；四家内置 provider ID 全表拿到；发现 `openai` vs legacy `openai-codex` 订阅凭据归属疑点，留给检测票。
 
 ## Not yet specified
 
