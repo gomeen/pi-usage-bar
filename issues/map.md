@@ -26,12 +26,13 @@ status: open
 - [Research pi extension API and packaging surface](006-research-pi-extension-api.md): 生命周期/setStatus 单行共享截断语义/命令注册/modelRegistry 凭据路径/打包规范成文；四家内置 provider ID 全表拿到；发现 `openai` vs legacy `openai-codex` 订阅凭据归属疑点，留给检测票。
 - [Research Codex usage API data contract](002-research-codex-usage-api.md): `/wham/usage` 端点 + 官方 CLI 源码背书的窗口对象（used_percent/limit_window_seconds/reset_at epoch秒）；窗口按 18000s/604800s 时长分类；429 形状清楚；每计划窗口矩阵无权威来源，按存在性渲染。
 - [Research MiniMax usage API data contract](005-research-minimax-usage-api.md): 现行 token_plan/remains + legacy 端点；2062=无 Token Plan；reset 靠 epoch 优先 + remains_time 单位启发式；`current_interval_usage_count` 新旧语义冲突需百分比消歧；hknet services[] 形状无佐证。
+- [Research Claude usage API data contract](003-research-claude-usage-api.md): `/api/oauth/usage` 未文档化，必须带 oauth beta 头；新旧双形状（平铺桶 + limits[] 数组）都要解析；resets_at 是 ISO 字符串（与 stdin 的 epoch 秒不同）；utilization 可超 100。
 
 ## Not yet specified
 
 - 发布流程细节：npm 包名查重与 scope、pi 社区（packages 生态）收录途径、发版 CI——待 toolchain 票（011）落定后毕业为专门的发布票。
-- 稳健性策略：OAuth token 过期/刷新失败、429 限流退避、多个 pi 进程并发时的缓存协调、离线/过期数据的展示——待四家 API 研究返回后才知道各家错误形状。
-- 重置时间的兜底推算：API 不给显式 reset 时间时的倒推规则——待 provider 研究返回。
+- 稳健性策略：OAuth token 过期/刷新失败、429 限流退避、多个 pi 进程并发时的缓存协调、离线/过期数据的展示——四家 API 研究已回，各家错误形状已知（见 research/*.md 的 Confidence 节），可在实现前集中拆一张稳健性规格票。
+- 重置时间的兜底推算：各家 reset 字段格式已查明（Codex epoch 秒、Claude ISO、ZAI epoch 毫秒、MiniMax 混合），只剩 MiniMax remains_time 单位启发式与“无任何 reset 字段”的显示策略——可并入配置 schema 或稳健性票。
 
 ## Out of scope
 
