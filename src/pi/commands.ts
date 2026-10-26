@@ -8,7 +8,11 @@ import {
 	DynamicBorder,
 	type getSettingsListTheme,
 } from "@earendil-works/pi-coding-agent";
-import { type SettingItem, SettingsList } from "@earendil-works/pi-tui";
+import {
+	type SettingItem,
+	SettingsList,
+	type SettingsListTheme,
+} from "@earendil-works/pi-tui";
 import { configFilePath, loadConfig, sparseSave } from "../config.js";
 import { planDisplayLabel } from "../detect.js";
 import { applyColorOverrides, GRAPHITE } from "../render/theme.js";
