@@ -7,6 +7,7 @@
 import { configFilePath, loadConfig, sparseSave } from "../config.js";
 import { planDisplayLabel } from "../detect.js";
 import type { UsageBarConfig, UsageSnapshot } from "../types.js";
+import { pickStyleVariant } from "./stylePicker.js";
 
 export interface CommandUIContext {
 	select(
@@ -15,6 +16,17 @@ export interface CommandUIContext {
 		opts?: unknown,
 	): Promise<string | undefined>;
 	notify(message: string, type?: "info" | "warning" | "error"): void;
+	custom<T>(
+		factory: (
+			tui: unknown,
+			theme: unknown,
+			keybindings: {
+				matches(data: string, action: string): boolean;
+			},
+			done: (result: T) => void,
+		) => unknown,
+		options?: { overlay?: boolean },
+	): Promise<T>;
 }
 
 function describeSnapshot(s: UsageSnapshot): string[] {
@@ -166,14 +178,27 @@ const CATEGORIES: Category[] = [
 export async function runConfigCommand(
 	ui: CommandUIContext,
 	onChanged: (cfg: UsageBarConfig) => void,
+	snapshots: UsageSnapshot[] = [],
 ): Promise<void> {
 	const cfg = loadConfig();
 	const catLabels = [
+		"Style picker (live preview)",
 		...CATEGORIES.map((c) => `${c.label} = ${c.read(cfg)}`),
 		"Open config file location",
 	];
 	const choice = await ui.select("usage-bar settings", catLabels);
 	if (choice === undefined) return;
+	if (choice === "Style picker (live preview)") {
+		const variant = await pickStyleVariant(ui, snapshots, cfg, Date.now());
+		if (variant) {
+			cfg.style = variant.style;
+			cfg.bar_glyph = variant.glyph;
+			sparseSave(cfg);
+			onChanged(cfg);
+			ui.notify(`style → ${variant.label} (saved)`, "info");
+		}
+		return;
+	}
 	if (choice === "Open config file location") {
 		ui.notify(
 			`Config file: ${configFilePath()} (edit providerMap and fine-tuning there)`,

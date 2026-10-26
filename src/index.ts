@@ -314,11 +314,15 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 	pi.registerCommand("usage-bar", {
 		description: "Configure usage-bar settings",
 		handler: async (_args, commandCtx) => {
-			await runConfigCommand(commandCtx.ui, (cfg) => {
-				state.config = cfg;
-				schedule(cfg.refresh_minutes * 60_000);
-				render();
-			});
+			await runConfigCommand(
+				commandCtx.ui,
+				(cfg) => {
+					state.config = cfg;
+					schedule(cfg.refresh_minutes * 60_000);
+					render();
+				},
+				state.snapshots,
+			);
 		},
 	});
 
