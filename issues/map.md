@@ -11,6 +11,8 @@ status: open
 ## Notes
 
 - 与用户中文沟通；代码、配置键名、commit message 英文。
+- **pi API 合规原则**：只用 pi 文档化的扩展 API；未文档化点（`AuthResult.source` 启发式、`AuthStatus` 字段）隔离在单独 compat 模块内防御性处理，pi 升级破坏时改动集中一处。
+- **性能约束**：无 daemon（pi 扩展常驻进程内，jiti 启动时加载）；定时器 session_start 启动、shutdown 幂等清理；fetch 带 AbortController，切模型取消在途；渲染路径零 IO（预计算颜色/blend）；Claude 专项 429 退避 + 临时目录缓存协调多进程；非 TUI 不轮询；轮询间隔可配（默认 2min）；footer 共享单行超宽截断，窄终端自动紧凑降级。
 - 本 tracker 为本地 markdown：`issues/map.md` 是地图，`issues/NNN-*.md` 是票；frontmatter 记 `labels` / `status` / `assignee` / `blocked-by`；frontier = open 且 blocked-by 全 closed 且无 assignee。票的答案追加在 `## Resolution` 段落并置 `status: closed`。
 - 从零写，不复制 hknet/pi-usage-bars 代码；其实现只作 API 形状参考，README 致谢（MIT）。
 - 样式与配置键名对齐 claude-code-usage-bar（cs）：`style` / `bar_glyph` / `density` / `color_ok` / `color_warn` / `color_hot` / `warning_threshold` / `critical_threshold` 等。
