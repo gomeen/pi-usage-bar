@@ -1,0 +1,24 @@
+{
+	"limits": [
+		{
+			"kind": "session",
+			"percent": 0,
+			"resets_at": null
+		},
+		{
+			"kind": "weekly_all",
+			"percent": 0,
+			"resets_at": null
+		},
+		{
+			"kind": "weekly_scoped",
+			"percent": 50,
+			"resets_at": "2026-02-01T00:00:00Z",
+			"scope": {
+				"model": {
+					"display_name": "Claude Opus 4"
+				}
+			}
+		}
+	]
+}

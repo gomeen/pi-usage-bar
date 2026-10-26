@@ -1,0 +1,21 @@
+{
+	"plan_type": "business",
+	"rate_limit": {
+		"allowed": true,
+		"limit_reached": false,
+		"primary_window": {
+			"used_percent": 61,
+			"limit_window_seconds": 18000,
+			"reset_after_seconds": 5400,
+			"reset_at": 1750010000
+		},
+		"secondary_window": null
+	},
+	"credits": {
+		"has_credits": true,
+		"unlimited": false,
+		"balance": "12.50",
+		"approx_local_messages": null,
+		"approx_cloud_messages": null
+	}
+}

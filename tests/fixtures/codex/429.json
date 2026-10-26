@@ -1,0 +1,9 @@
+{
+	"error": {
+		"type": "usage_limit_reached",
+		"code": "insufficient_quota",
+		"plan_type": "plus",
+		"resets_at": 1750000000,
+		"limit_window_minutes": 300
+	}
+}

@@ -1,0 +1,24 @@
+{
+	"limits": [
+		{
+			"kind": "weekly_all",
+			"percent": 40,
+			"resets_at": "2026-02-01T00:00:00Z"
+		},
+		{
+			"kind": "session",
+			"percent": 25,
+			"resets_at": "2026-01-28T15:00:00Z"
+		},
+		{
+			"kind": "weekly_scoped",
+			"percent": 10,
+			"resets_at": "2026-02-01T00:00:00Z",
+			"scope": {
+				"model": {
+					"display_name": "Claude Max Sonnet"
+				}
+			}
+		}
+	]
+}
