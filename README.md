@@ -10,7 +10,7 @@ Subscription plan usage bars for the [Pi](https://github.com/earendil-works/pi) 
 - **Four looks**: aurora block (default), aurora thin, ring (`◔ 14% 5h · resets 1h07m`), and classic battery — all switchable live
 - **Relay balances**: custom providers on one-api/new-api relays automatically show their remaining balance (`bal $200.00`)
 - **Official reset announcements** for Codex plans via [codex-resets.com](https://codex-resets.com) (`↻ Official reset · 21h ago`)
-- **`/usage`** command with per-provider details, **`/usage-bar`** to configure everything through dialogs, **`--usage`** for a one-line JSON smoke test
+- **`/usage`** opens a single menu for provider details and nested **Settings**; **`--usage`** prints a one-line JSON smoke test
 
 ## Supported plans
 
@@ -34,7 +34,7 @@ Restart Pi (or `/reload`). Authenticate your plans through Pi's `/login` — the
 
 ## Configuration
 
-Everything lives in `~/.pi/agent/usage-bar.json` (sparse — only non-default keys are written). Edit it directly or use `/usage-bar` dialogs.
+Everything lives in `~/.pi/agent/usage-bar.json` (sparse — only non-default keys are written). Edit it directly or open `/usage` → **Settings**. Choose **Look**, **Display**, or **Data** to change values with Enter/Space; changes save immediately. The live style preview is under **Look** → **Style picker**. Esc returns one level at a time. Structured `providerMap` entries are edited in the JSON file.
 
 | Key | Default | Meaning |
 |---|---|---|

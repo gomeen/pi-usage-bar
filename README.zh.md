@@ -10,7 +10,7 @@
 - **四种 look**：aurora 块条（默认）、aurora 细线、ring（`◔ 14% 5h · resets 1h07m`）、classic 电池条——全部可实时切换
 - **中转站余额**：one-api/new-api 系中转的自定义 provider 自动探测计费端点，显示剩余金额（`bal $200.00`）
 - **官方重置公告**：Codex 套餐接入 [codex-resets.com](https://codex-resets.com)（`↻ Official reset · 21h ago`）
-- **`/usage`** 查看各套餐详情，**`/usage-bar`** 对话框式配置一切，**`--usage`** 一行 JSON 冒烟测试
+- **`/usage`** 单一入口查看套餐详情或进入内层 **Settings**，**`--usage`** 一行 JSON 冒烟测试
 
 ## 支持的套餐
 
@@ -34,7 +34,7 @@ pi install npm:@gomeen/pi-usage-bar
 
 ## 配置
 
-配置在 `~/.pi/agent/usage-bar.json`（稀疏写入——只存非默认键）。可以直接改文件，也可以用 `/usage-bar` 对话框。
+配置在 `~/.pi/agent/usage-bar.json`（稀疏写入——只存非默认键）。可以直接改文件，也可以打开 `/usage` → **Settings**，再选择 **Look**、**Display** 或 **Data**。Enter/Space 切换值并立即保存，样式预览在 **Look** → **Style picker** 中，Esc 逐级返回。结构化的 `providerMap` 条目在 JSON 文件中编辑。
 
 | 键 | 默认 | 含义 |
 |---|---|---|

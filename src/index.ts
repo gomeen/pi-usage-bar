@@ -305,23 +305,18 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 	});
 
 	pi.registerCommand("usage", {
-		description: "Show usage details for configured providers",
+		description: "Show usage details and settings",
 		handler: async (_args, commandCtx) => {
-			await runUsageCommand(commandCtx.ui, state.snapshots);
-		},
-	});
-
-	pi.registerCommand("usage-bar", {
-		description: "Configure usage-bar settings",
-		handler: async (_args, commandCtx) => {
-			await runConfigCommand(
-				commandCtx.ui,
-				(cfg) => {
-					state.config = cfg;
-					schedule(cfg.refresh_minutes * 60_000);
-					render();
-				},
-				state.snapshots,
+			await runUsageCommand(commandCtx.ui, state.snapshots, () =>
+				runConfigCommand(
+					commandCtx.ui,
+					(cfg) => {
+						state.config = cfg;
+						schedule(cfg.refresh_minutes * 60_000);
+						render();
+					},
+					state.snapshots,
+				),
 			);
 		},
 	});
