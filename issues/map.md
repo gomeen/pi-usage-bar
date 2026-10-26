@@ -27,6 +27,7 @@ status: open
 - [Research Codex usage API data contract](002-research-codex-usage-api.md): `/wham/usage` 端点 + 官方 CLI 源码背书的窗口对象（used_percent/limit_window_seconds/reset_at epoch秒）；窗口按 18000s/604800s 时长分类；429 形状清楚；每计划窗口矩阵无权威来源，按存在性渲染。
 - [Research MiniMax usage API data contract](005-research-minimax-usage-api.md): 现行 token_plan/remains + legacy 端点；2062=无 Token Plan；reset 靠 epoch 优先 + remains_time 单位启发式；`current_interval_usage_count` 新旧语义冲突需百分比消歧；hknet services[] 形状无佐证。
 - [Research Claude usage API data contract](003-research-claude-usage-api.md): `/api/oauth/usage` 未文档化，必须带 oauth beta 头；新旧双形状（平铺桶 + limits[] 数组）都要解析；resets_at 是 ISO 字符串（与 stdin 的 epoch 秒不同）；utilization 可超 100。
+- [Official reset announcements in scope](012-official-resets-in-scope.md): codex-resets.com 追踪 OpenAI 员工 X 官宣的 Codex 手动重置；ETag+TTL 5min+inflight 锁方案照携；纳入 v1，`show_resets` 默认开，仅 Codex 用户拉取。
 
 ## Not yet specified
 
@@ -39,5 +40,4 @@ status: open
 - v1 附加 segments：模型名、context 条、prompt-cache 倒计时（Claude Code 专属概念）、成本显示。
 - v1 之外的 provider：Kimi、Moonshot、DeepSeek、OpenRouter、xAI、Baseten、Vercel、Fireworks 等（后续版本再议）。
 - i18n 多语言界面（v1 只英文，README 中英双语）。
-- codex-resets.com 官方重置公告机制（Codex 专属，与 pi 语境无关；重置倒计时显示在范围内）。
 - fork/移植 hknet/pi-usage-bars 代码。
