@@ -89,7 +89,7 @@ const PAL = {
   ok:[78,200,91], okTeal:[120,200,192], warn:[232,178,96], hot:[232,116,116],
   pillInk:[238,235,224], wt:[168,152,226]
 };
-let S = { look:'aurora-block', dens:'regular', okTeal:false, mode:'active' };
+const S = { look:'aurora-block', dens:'regular', okTeal:false, mode:'active' };
 
 const css = c => `color:rgb(${c.map(Math.round).join(',')})`;
 const blend = (a,b,t) => a.map((v,i)=>v+(b[i]-v)*t);
@@ -125,7 +125,7 @@ const r7 = s => { const d=Math.floor(s/86400), h=Math.floor((s%86400)/3600); ret
 
 // ---- aurora window: MUTE label · bar12 · bold pct(sev) · EDGE ⏰ · MUTE reset ----
 function aurWin(label,p,reset,emoji){
-  let out = span(PAL.mute,label)+' '+bar(p,12,S.look==='aurora-thin'?'━':'■')+' '+pctText(p,sev(p))
+  const out = span(PAL.mute,label)+' '+bar(p,12,S.look==='aurora-thin'?'━':'■')+' '+pctText(p,sev(p))
           +' '+span(PAL.edge,'⏰')+span(PAL.mute,reset||'--')+(emoji||'');
   return out;
 }

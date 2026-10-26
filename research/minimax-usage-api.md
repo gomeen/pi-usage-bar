@@ -10,12 +10,12 @@ Method: source-code and documentation research only. No credentials used, no aut
 
 ### 1.1 The four endpoints in play
 
-| Purpose | URL | Status |
-|---|---|---|
-| Global, current | `https://api.minimax.io/v1/token_plan/remains` | Current; used by hknet [S1], MiniMax CLI (`mmx`) [S2], cc-switch [S7] |
-| Global, legacy | `https://api.minimax.io/v1/api/openplatform/coding_plan/remains` | Legacy Coding Plan path; still works for some keys [S5] [S8] [S9] |
-| CN, current | `https://api.minimaxi.com/v1/token_plan/remains` | Current CN; hknet [S1], mm CLI (pre-main-branch form) [S2-PR104], OpenTokenUsage [S6], cc-switch comment [S7] |
-| CN, legacy | `https://api.minimaxi.com/v1/api/openplatform/coding_plan/remains` | Legacy CN path [S5] [S10] |
+| Purpose         | URL                                                                | Status                                                                                                        |
+| --------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| Global, current | `https://api.minimax.io/v1/token_plan/remains`                     | Current; used by hknet [S1], MiniMax CLI (`mmx`) [S2], cc-switch [S7]                                         |
+| Global, legacy  | `https://api.minimax.io/v1/api/openplatform/coding_plan/remains`   | Legacy Coding Plan path; still works for some keys [S5][S8][S9]                                               |
+| CN, current     | `https://api.minimaxi.com/v1/token_plan/remains`                   | Current CN; hknet [S1], mm CLI (pre-main-branch form) [S2-PR104], OpenTokenUsage [S6], cc-switch comment [S7] |
+| CN, legacy      | `https://api.minimaxi.com/v1/api/openplatform/coding_plan/remains` | Legacy CN path [S5][S10]                                                                                      |
 
 ### 1.2 Host aliasing (important)
 
@@ -41,7 +41,7 @@ Practical takeaway: treat `api.minimax.io` / `api.minimaxi.com` as the working A
 - `Authorization: Bearer <key>` plus `Accept: application/json` / `Content-Type: application/json` [S1][S2][S3][S6][S9].
 - GET request, no query parameters, no body [S3][S9].
 - Key taxonomy (official): a **Subscription Key** (Token Plan / M Plan key) "only uses your M Plan usage and is not interchangeable with a pay-as-you-go API Key" [S3-intro/quickstart]. Subscription keys are visible in the console under personal info / API Keys [S3].
-- MiniMax's CLI distinguishes key types by prefix: keys starting `sk-api-` are pay-as-you-go "secret API keys" and get routed to a *different* endpoint, `<base>/account/query_balance` (note: no `/v1` prefix), instead of the quota endpoint [S2-endpoints.ts]. An m2#88 reporter's subscription key had prefix `sk-cp-...` ("cp" = coding plan, presumably) [S5].
+- MiniMax's CLI distinguishes key types by prefix: keys starting `sk-api-` are pay-as-you-go "secret API keys" and get routed to a _different_ endpoint, `<base>/account/query_balance` (note: no `/v1` prefix), instead of the quota endpoint [S2-endpoints.ts]. An m2#88 reporter's subscription key had prefix `sk-cp-...` ("cp" = coding plan, presumably) [S5].
 - The legacy CN endpoint reportedly requires a "Coding Plan API Key, 专用于 Coding Plan 套餐" (dedicated to the Coding Plan subscription) [S10].
 - OAuth access tokens also work as the Bearer credential for the quota endpoint in `mmx` [S2].
 
@@ -64,46 +64,46 @@ Practical takeaway: treat `api.minimax.io` / `api.minimaxi.com` as the working A
 
 From MiniMax's own CLI type definition and fixture [S2], cross-checked against [S1][S6][S7][S9][S10]:
 
-| Field | Type | Meaning |
-|---|---|---|
-| `model_name` | string | Quota bucket name: `"MiniMax-M*"` / `"general"` (coding/text), `"video"`, `"speech-hd"`, `"image-01"`, etc. cc-switch: only `general` is the coding bucket; skip `video` [S7]. |
-| `start_time` | int, epoch **ms** | Start of the current interval (rolling 5h) window [S2][S9]. |
-| `end_time` | int, epoch **ms** | End of the current interval window — the authoritative interval reset time [S2][S7][S9]. |
-| `remains_time` | int | Time until the window resets. CLI fixture value `7151954` only makes sense as **ms** against a 5h window [S2-fixture]; the CN community doc for the legacy endpoint documents it as **seconds** of the *subscription period*, explicitly "和5小时窗口无关" (unrelated to the 5h window), example `8277752` [S10]. Unit is genuinely ambiguous across deployments — see §5. |
-| `current_interval_total_count` | int | Total requests/prompts in the interval window. `0` = window not applicable [S2]. |
-| `current_interval_usage_count` | int | **Ambiguous — see §3.4.** Legacy responses: remaining count. Newer responses: consumed count [S2-utils/quota.ts]. |
-| `current_interval_remaining_percent` | number, optional | Remaining percent, 0–100. The authoritative utilization signal; used = `100 − value` [S2][S6][S7]. May be absent (CLI fixture omits it) [S2-fixture]. |
-| `current_interval_status` | int, optional | Server-side window status: `1` = normal/limited, `2` = exhausted, `3` = unlimited [S2-quota-table comment]. |
-| `current_weekly_total_count` | int | Total for the weekly (7-day) window; `0` = no weekly quota for this model (e.g. video-only or plan without weekly cap) [S2][S7]. |
-| `current_weekly_usage_count` | int | Weekly count, same ambiguity as interval [S2]. |
-| `current_weekly_remaining_percent` | number, optional | Weekly remaining percent 0–100 [S6][S7]. |
-| `current_weekly_status` | int, optional | Same enum; `1` = weekly window active, `3` = unlimited/not-applicable (then `remaining_percent` is pinned at 100 and must not be shown as a quota) [S2][S7]. |
-| `weekly_start_time` / `weekly_end_time` | int, epoch ms | Weekly window bounds; `weekly_end_time` is the weekly reset time [S2][S7]. |
-| `weekly_remains_time` | int | ms (per CLI fixture, `248351954` ≈ 2.9 days) until weekly reset [S2-fixture]; same unit caveat as `remains_time`. |
-| `weekly_boost_permille` | int, optional | Weekly display multiplier in permille: rendered weekly value = base percent × permille/1000 (`1500` ⇒ plan shows up to 150%); CLI caps display at 200% [S2]. |
+| Field                                   | Type              | Meaning                                                                                                                                                                                                                                                                                                                                                                    |
+| --------------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `model_name`                            | string            | Quota bucket name: `"MiniMax-M*"` / `"general"` (coding/text), `"video"`, `"speech-hd"`, `"image-01"`, etc. cc-switch: only `general` is the coding bucket; skip `video` [S7].                                                                                                                                                                                             |
+| `start_time`                            | int, epoch **ms** | Start of the current interval (rolling 5h) window [S2][S9].                                                                                                                                                                                                                                                                                                                |
+| `end_time`                              | int, epoch **ms** | End of the current interval window — the authoritative interval reset time [S2][S7][S9].                                                                                                                                                                                                                                                                                   |
+| `remains_time`                          | int               | Time until the window resets. CLI fixture value `7151954` only makes sense as **ms** against a 5h window [S2-fixture]; the CN community doc for the legacy endpoint documents it as **seconds** of the _subscription period_, explicitly "和5小时窗口无关" (unrelated to the 5h window), example `8277752` [S10]. Unit is genuinely ambiguous across deployments — see §5. |
+| `current_interval_total_count`          | int               | Total requests/prompts in the interval window. `0` = window not applicable [S2].                                                                                                                                                                                                                                                                                           |
+| `current_interval_usage_count`          | int               | **Ambiguous — see §3.4.** Legacy responses: remaining count. Newer responses: consumed count [S2-utils/quota.ts].                                                                                                                                                                                                                                                          |
+| `current_interval_remaining_percent`    | number, optional  | Remaining percent, 0–100. The authoritative utilization signal; used = `100 − value` [S2][S6][S7]. May be absent (CLI fixture omits it) [S2-fixture].                                                                                                                                                                                                                      |
+| `current_interval_status`               | int, optional     | Server-side window status: `1` = normal/limited, `2` = exhausted, `3` = unlimited [S2-quota-table comment].                                                                                                                                                                                                                                                                |
+| `current_weekly_total_count`            | int               | Total for the weekly (7-day) window; `0` = no weekly quota for this model (e.g. video-only or plan without weekly cap) [S2][S7].                                                                                                                                                                                                                                           |
+| `current_weekly_usage_count`            | int               | Weekly count, same ambiguity as interval [S2].                                                                                                                                                                                                                                                                                                                             |
+| `current_weekly_remaining_percent`      | number, optional  | Weekly remaining percent 0–100 [S6][S7].                                                                                                                                                                                                                                                                                                                                   |
+| `current_weekly_status`                 | int, optional     | Same enum; `1` = weekly window active, `3` = unlimited/not-applicable (then `remaining_percent` is pinned at 100 and must not be shown as a quota) [S2][S7].                                                                                                                                                                                                               |
+| `weekly_start_time` / `weekly_end_time` | int, epoch ms     | Weekly window bounds; `weekly_end_time` is the weekly reset time [S2][S7].                                                                                                                                                                                                                                                                                                 |
+| `weekly_remains_time`                   | int               | ms (per CLI fixture, `248351954` ≈ 2.9 days) until weekly reset [S2-fixture]; same unit caveat as `remains_time`.                                                                                                                                                                                                                                                          |
+| `weekly_boost_permille`                 | int, optional     | Weekly display multiplier in permille: rendered weekly value = base percent × permille/1000 (`1500` ⇒ plan shows up to 150%); CLI caps display at 200% [S2].                                                                                                                                                                                                               |
 
 Official fixture (real shape, `mmx` test fixture "updated to match real API response format") [S2-fixture/PR104]:
 
 ```json
 {
-  "base_resp": { "status_code": 0, "status_msg": "success" },
-  "model_remains": [
-    {
-      "model_name": "MiniMax-M*",
-      "start_time": 1776355200000,
-      "end_time": 1776373200000,
-      "remains_time": 7151954,
-      "current_interval_total_count": 1500,
-      "current_interval_usage_count": 228,
-      "current_weekly_total_count": 0,
-      "current_weekly_usage_count": 0,
-      "weekly_start_time": 1776009600000,
-      "weekly_end_time": 1776614400000,
-      "weekly_remains_time": 248351954
-    },
-    { "model_name": "speech-hd", "...": "..." },
-    { "model_name": "image-01", "...": "..." }
-  ]
+	"base_resp": { "status_code": 0, "status_msg": "success" },
+	"model_remains": [
+		{
+			"model_name": "MiniMax-M*",
+			"start_time": 1776355200000,
+			"end_time": 1776373200000,
+			"remains_time": 7151954,
+			"current_interval_total_count": 1500,
+			"current_interval_usage_count": 228,
+			"current_weekly_total_count": 0,
+			"current_weekly_usage_count": 0,
+			"weekly_start_time": 1776009600000,
+			"weekly_end_time": 1776614400000,
+			"weekly_remains_time": 248351954
+		},
+		{ "model_name": "speech-hd", "...": "..." },
+		{ "model_name": "image-01", "...": "..." }
+	]
 }
 ```
 
@@ -168,16 +168,16 @@ Two layers:
 
 **Payload-level (`base_resp.status_code` inside HTTP 200)** — codes observed across sources:
 
-| Code | Meaning | Source |
-|---|---|---|
-| `0` | success | all |
-| `1004` | "cookie is missing, log in again" — auth/session failure on the (legacy) endpoint for keys it doesn't accept; OpenTokenUsage maps 1004 or messages containing "cookie"/"log in" to an auth error | [S5][S6] |
-| `2062` | no active Token Plan subscription (Credits-only key) — hknet treats as neutral account state | [S1] |
-| `2049` | invalid API Key | [S10] |
-| `2013` | parameter error | [S10] |
-| `1002` | request rate limit exceeded (also used for content-filter in other CLI contexts) | [S10][S2] |
-| `2056` | Coding Plan resource limit exceeded — wait for next window | [S10] |
-| `1000`/`1024`/`1033` | system/internal errors | [S10] |
+| Code                 | Meaning                                                                                                                                                                                          | Source    |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------- |
+| `0`                  | success                                                                                                                                                                                          | all       |
+| `1004`               | "cookie is missing, log in again" — auth/session failure on the (legacy) endpoint for keys it doesn't accept; OpenTokenUsage maps 1004 or messages containing "cookie"/"log in" to an auth error | [S5][S6]  |
+| `2062`               | no active Token Plan subscription (Credits-only key) — hknet treats as neutral account state                                                                                                     | [S1]      |
+| `2049`               | invalid API Key                                                                                                                                                                                  | [S10]     |
+| `2013`               | parameter error                                                                                                                                                                                  | [S10]     |
+| `1002`               | request rate limit exceeded (also used for content-filter in other CLI contexts)                                                                                                                 | [S10][S2] |
+| `2056`               | Coding Plan resource limit exceeded — wait for next window                                                                                                                                       | [S10]     |
+| `1000`/`1024`/`1033` | system/internal errors                                                                                                                                                                           | [S10]     |
 
 `base_resp` may sit at root or under `data`; hknet checks both (`data.base_resp ?? root.base_resp`), tolerating camelCase `baseResp`/`statusCode`/`statusMsg` [S1][S6]. An empty/absent `model_remains` with status 0 is "no quota data" (OpenTokenUsage throws a parse error) [S6-lqm].
 

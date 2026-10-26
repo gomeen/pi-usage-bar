@@ -9,17 +9,17 @@ authenticated calls were made; everything below comes from source code and docum
 
 Primary sources, ranked:
 
-| # | Source | Type | Location |
-|---|--------|------|----------|
-| S1 | `zai-org/zai-coding-plugins` — official Z.AI plugin `glm-plan-usage` | First-party client code | cloned to `/tmp/wayfinder-refs/zai-repos/zai-coding-plugins/plugins/glm-plan-usage/skills/usage-query-skill/scripts/query-usage.mjs` |
-| S2 | `hknet/pi-usage-bars` `extensions/usage-bars/core.ts` (`fetchZaiUsage`, `extractZaiUsageFromPayload`) + tests | Working pi extension | `/tmp/wayfinder-refs/pi-usage-bars/extensions/usage-bars/core.ts`, `tests/usage-bars-core.test.ts` |
-| S3 | `steipete/CodexBar` `docs/zai.md` + `Sources/CodexBarCore/Resources/Plugins/zai.js` | Working monitor app, heavily commented | cloned to `/tmp/wayfinder-refs/zai-repos/CodexBar/` |
-| S4 | `PowerUserZ/OpenTokenUsage` `docs/providers/zai.md` | Documented client with response fixtures | cloned to `/tmp/wayfinder-refs/zai-repos/OpenTokenUsage/docs/providers/zai.md` |
-| S5 | `farion1231/cc-switch` `src-tauri/src/services/coding_plan.rs` + issue #1588 | Working Rust client | cloned to `/tmp/wayfinder-refs/zai-repos/cc-switch/` |
-| S6 | `vhxubo/glm-quota` (single-file dashboard) | Working web client | cloned to `/tmp/wayfinder-refs/zai-repos/glm-quota/` |
-| S7 | `Feng-H/pi-zai-usage` `extensions/zai-usage.ts` | pi footer extension | cloned to `/tmp/wayfinder-refs/zai-repos/pi-zai-usage/` |
-| S8 | Official docs: `docs.z.ai/devpack/*`, `docs.bigmodel.cn/cn/coding-plan/*`, `docs.z.ai/api-reference/*` | Official documentation | URLs cited inline |
-| S9 | pi built-in provider definitions (`zai`, `zai-coding-cn`) | First-party pi source | `@earendil-works/pi-ai/dist/providers/zai.js`, `zai-coding-cn.js` (local install) |
+| #   | Source                                                                                                        | Type                                     | Location                                                                                                                             |
+| --- | ------------------------------------------------------------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| S1  | `zai-org/zai-coding-plugins` — official Z.AI plugin `glm-plan-usage`                                          | First-party client code                  | cloned to `/tmp/wayfinder-refs/zai-repos/zai-coding-plugins/plugins/glm-plan-usage/skills/usage-query-skill/scripts/query-usage.mjs` |
+| S2  | `hknet/pi-usage-bars` `extensions/usage-bars/core.ts` (`fetchZaiUsage`, `extractZaiUsageFromPayload`) + tests | Working pi extension                     | `/tmp/wayfinder-refs/pi-usage-bars/extensions/usage-bars/core.ts`, `tests/usage-bars-core.test.ts`                                   |
+| S3  | `steipete/CodexBar` `docs/zai.md` + `Sources/CodexBarCore/Resources/Plugins/zai.js`                           | Working monitor app, heavily commented   | cloned to `/tmp/wayfinder-refs/zai-repos/CodexBar/`                                                                                  |
+| S4  | `PowerUserZ/OpenTokenUsage` `docs/providers/zai.md`                                                           | Documented client with response fixtures | cloned to `/tmp/wayfinder-refs/zai-repos/OpenTokenUsage/docs/providers/zai.md`                                                       |
+| S5  | `farion1231/cc-switch` `src-tauri/src/services/coding_plan.rs` + issue #1588                                  | Working Rust client                      | cloned to `/tmp/wayfinder-refs/zai-repos/cc-switch/`                                                                                 |
+| S6  | `vhxubo/glm-quota` (single-file dashboard)                                                                    | Working web client                       | cloned to `/tmp/wayfinder-refs/zai-repos/glm-quota/`                                                                                 |
+| S7  | `Feng-H/pi-zai-usage` `extensions/zai-usage.ts`                                                               | pi footer extension                      | cloned to `/tmp/wayfinder-refs/zai-repos/pi-zai-usage/`                                                                              |
+| S8  | Official docs: `docs.z.ai/devpack/*`, `docs.bigmodel.cn/cn/coding-plan/*`, `docs.z.ai/api-reference/*`        | Official documentation                   | URLs cited inline                                                                                                                    |
+| S9  | pi built-in provider definitions (`zai`, `zai-coding-cn`)                                                     | First-party pi source                    | `@earendil-works/pi-ai/dist/providers/zai.js`, `zai-coding-cn.js` (local install)                                                    |
 
 Docs pages were read through search-provider caches; direct fetching was blocked by local
 DNS (TUN fake-IP), which is why no page text is quoted beyond cached snippets.
@@ -28,11 +28,10 @@ DNS (TUN fake-IP), which is why no page text is quoted beyond cached snippets.
 
 Confirmed by S1, S2, S3, S4, S5, S6, S7 — all agree:
 
-| Variant | Quota endpoint |
-|---|---|
-| Global (z.ai) | `GET https://api.z.ai/api/monitor/usage/quota/limit` |
+| Variant          | Quota endpoint                                               |
+| ---------------- | ------------------------------------------------------------ |
+| Global (z.ai)    | `GET https://api.z.ai/api/monitor/usage/quota/limit`         |
 | China (bigmodel) | `GET https://open.bigmodel.cn/api/monitor/usage/quota/limit` |
-
 - Same path on both hosts; only the base differs (S1 derives the host from
   `ANTHROPIC_BASE_URL`; S3/S6/S7 hardcode the two bases).
 - Host variants accepted by first-party/official code:
@@ -103,30 +102,30 @@ S4/S5 fixtures show both `msg` values `"success"` and `"操作成功"`):
 
 Root-level fields:
 
-| Field | Type | Meaning | Evidence |
-|---|---|---|---|
-| `code` | int | 200 on success; error code otherwise | S3, S4, S5 |
-| `msg` | string | human message; used as error text on failure | S3, S5 |
-| `success` | bool | `true` on success | S3, S4, S7 |
-| `data` | object | payload | all |
-| `data.level` | string | plan tier, e.g. `lite` / `pro` (积分制 plans) | S6, S7 |
+| Field           | Type   | Meaning                                                                                                    | Evidence                                      |
+| --------------- | ------ | ---------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
+| `code`          | int    | 200 on success; error code otherwise                                                                       | S3, S4, S5                                    |
+| `msg`           | string | human message; used as error text on failure                                                               | S3, S5                                        |
+| `success`       | bool   | `true` on success                                                                                          | S3, S4, S7                                    |
+| `data`          | object | payload                                                                                                    | all                                           |
+| `data.level`    | string | plan tier, e.g. `lite` / `pro` (积分制 plans)                                                              | S6, S7                                        |
 | `data.planName` | string | plan display name (e.g. "GLM Coding Max"); S3 also probes `plan`, `plan_type`, `packageName` as alternates | S3, S4 (subscription list uses `productName`) |
-| `data.limits` | array | quota windows | all |
+| `data.limits`   | array  | quota windows                                                                                              | all                                           |
 
 Limit entry (array element of `data.limits`):
 
-| Field | Type | Meaning | Evidence |
-|---|---|---|---|
-| `type` | string | `"TOKENS_LIMIT"` (token plans) \| `"CREDIT_LIMIT"` (credit/积分 plans) \| `"TIME_LIMIT"` (monthly MCP/tool calls) | S2, S3, S4, S5, S6 |
-| `unit` | int | duration unit code; see window semantics below | all |
-| `number` | int | duration count (`unit`×`number` = window length) | S3, S4, S5, S6 |
-| `usage` | int | **the window LIMIT (denominator / total)** — naming gotcha, not "used" | S3, S4 (fixture: `usage: 800000000` with `percentage: 15`), S6 |
-| `total` | int | same meaning as `usage`; S6 reads `total` first, falls back to `usage` — some responses carry `total` instead | S6 |
-| `currentValue` | int | amount **used** in the window | S3, S4, S6 |
-| `remaining` | int | amount remaining | S3, S4 |
-| `percentage` | int | used percentage 0–100 (integer; S3 requires `Number.isInteger`) | all |
-| `nextResetTime` | int | epoch **milliseconds** of next reset | S2, S3, S4, S5, S6 |
-| `usageDetails` | array | only on `TIME_LIMIT`: `[{ "modelCode": "search-prime", "usage": 1433 }, …]` per-tool call counts (`search-prime`, `web-reader`, `zread`) | S3, S4, S6, S7 |
+| Field           | Type   | Meaning                                                                                                                                  | Evidence                                                       |
+| --------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `type`          | string | `"TOKENS_LIMIT"` (token plans) \| `"CREDIT_LIMIT"` (credit/积分 plans) \| `"TIME_LIMIT"` (monthly MCP/tool calls)                        | S2, S3, S4, S5, S6                                             |
+| `unit`          | int    | duration unit code; see window semantics below                                                                                           | all                                                            |
+| `number`        | int    | duration count (`unit`×`number` = window length)                                                                                         | S3, S4, S5, S6                                                 |
+| `usage`         | int    | **the window LIMIT (denominator / total)** — naming gotcha, not "used"                                                                   | S3, S4 (fixture: `usage: 800000000` with `percentage: 15`), S6 |
+| `total`         | int    | same meaning as `usage`; S6 reads `total` first, falls back to `usage` — some responses carry `total` instead                            | S6                                                             |
+| `currentValue`  | int    | amount **used** in the window                                                                                                            | S3, S4, S6                                                     |
+| `remaining`     | int    | amount remaining                                                                                                                         | S3, S4                                                         |
+| `percentage`    | int    | used percentage 0–100 (integer; S3 requires `Number.isInteger`)                                                                          | all                                                            |
+| `nextResetTime` | int    | epoch **milliseconds** of next reset                                                                                                     | S2, S3, S4, S5, S6                                             |
+| `usageDetails`  | array  | only on `TIME_LIMIT`: `[{ "modelCode": "search-prime", "usage": 1433 }, …]` per-tool call counts (`search-prime`, `web-reader`, `zread`) | S3, S4, S6, S7                                                 |
 
 Consistency rule observed by S3: when `usage > 0` and `currentValue`/`remaining` are
 present, compute percent from the counts (clamped 0–100) rather than trusting
@@ -138,11 +137,11 @@ Both platforms' plans have exactly two quota windows — 5-hour and weekly — p
 docs (S8: `docs.z.ai/devpack/overview`; `docs.bigmodel.cn/cn/coding-plan/overview`: "套餐
 同时设有每 5 小时和每周额度上限"). In `limits[]` they are distinguished by `type` + `unit`:
 
-| Window | Entry | Notes | Evidence |
-|---|---|---|---|
-| Session (5h rolling) | `TOKENS_LIMIT` or `CREDIT_LIMIT`, `unit: 3`, `number: 5` | rolling window, "dynamically refreshed; resets 5 hours after consumption" (S8 devpack/overview) | S2, S4, S5, S6, S7 |
-| Weekly (7-day) | `TOKENS_LIMIT` or `CREDIT_LIMIT`, `unit: 6`, `number: 1` **or** `number: 7` (both observed in the wild; anchor on `unit` only) | 7-day cycle anchored at subscription order time (S8 devpack/faq: "starts counting from the time you place your order… refreshed and reset on a 7-day cycle") | S2 (unit only), S4 (`number: 7`), S5 (both documented), S6 (`number: 1`) |
-| Monthly MCP/tools | `TIME_LIMIT`, `unit: 5`, `number: 1` | search/web-reader/zread call quota; official plugin labels it "MCP usage(1 Month)" | S1, S3, S4, S6, S7 |
+| Window               | Entry                                                                                                                          | Notes                                                                                                                                                        | Evidence                                                                 |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------ |
+| Session (5h rolling) | `TOKENS_LIMIT` or `CREDIT_LIMIT`, `unit: 3`, `number: 5`                                                                       | rolling window, "dynamically refreshed; resets 5 hours after consumption" (S8 devpack/overview)                                                              | S2, S4, S5, S6, S7                                                       |
+| Weekly (7-day)       | `TOKENS_LIMIT` or `CREDIT_LIMIT`, `unit: 6`, `number: 1` **or** `number: 7` (both observed in the wild; anchor on `unit` only) | 7-day cycle anchored at subscription order time (S8 devpack/faq: "starts counting from the time you place your order… refreshed and reset on a 7-day cycle") | S2 (unit only), S4 (`number: 7`), S5 (both documented), S6 (`number: 1`) |
+| Monthly MCP/tools    | `TIME_LIMIT`, `unit: 5`, `number: 1`                                                                                           | search/web-reader/zread call quota; official plugin labels it "MCP usage(1 Month)"                                                                           | S1, S3, S4, S6, S7                                                       |
 
 Generic unit map used by S3 for unknown combos: `1=day (1440min)`, `3=hour (60min)`,
 `5=minute`, `6=week (10080min)` — with `(TIME_LIMIT, unit 5, number 1)` special-cased as
@@ -186,16 +185,16 @@ this one.
 
 ## 5. CN vs global differences
 
-| Aspect | Global (`api.z.ai`) | China (`open.bigmodel.cn`) | Evidence |
-|---|---|---|---|
-| Path | identical `/api/monitor/usage/quota/limit` | identical | S1 |
-| Auth | Bearer (raw also sent by official plugin) | Bearer and raw both accepted | S3, S5, S6, S7 |
-| Envelope & limit fields | same | same (`msg` may be Chinese) | S3, S4, S5 |
-| Quota windows | 5h + weekly (credits) | 5h + weekly (积分) — same semantics | S8 overviews |
-| Team usage | not observed | `?type=2` + `Bigmodel-Organization`/`Bigmodel-Project` headers; empty `data:{}` if selectors missing/wrong | S3 |
-| Extra hosts | — | `dev.bigmodel.cn` (S1), bare `bigmodel.cn` (third-party docs) | S1, S9 (lzw.me) |
-| Subscription metadata | `/api/biz/subscription/list` (S4) | not verified (open question) | S4 |
-| Coding inference base | `https://api.z.ai/api/coding/paas/v4` (S9) or `/api/anthropic` (S1) | `https://open.bigmodel.cn/api/coding/paas/v4` (S9) or `/api/anthropic` (S1) | S1, S9 |
+| Aspect                  | Global (`api.z.ai`)                                                 | China (`open.bigmodel.cn`)                                                                                 | Evidence        |
+| ----------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | --------------- |
+| Path                    | identical `/api/monitor/usage/quota/limit`                          | identical                                                                                                  | S1              |
+| Auth                    | Bearer (raw also sent by official plugin)                           | Bearer and raw both accepted                                                                               | S3, S5, S6, S7  |
+| Envelope & limit fields | same                                                                | same (`msg` may be Chinese)                                                                                | S3, S4, S5      |
+| Quota windows           | 5h + weekly (credits)                                               | 5h + weekly (积分) — same semantics                                                                        | S8 overviews    |
+| Team usage              | not observed                                                        | `?type=2` + `Bigmodel-Organization`/`Bigmodel-Project` headers; empty `data:{}` if selectors missing/wrong | S3              |
+| Extra hosts             | —                                                                   | `dev.bigmodel.cn` (S1), bare `bigmodel.cn` (third-party docs)                                              | S1, S9 (lzw.me) |
+| Subscription metadata   | `/api/biz/subscription/list` (S4)                                   | not verified (open question)                                                                               | S4              |
+| Coding inference base   | `https://api.z.ai/api/coding/paas/v4` (S9) or `/api/anthropic` (S1) | `https://open.bigmodel.cn/api/coding/paas/v4` (S9) or `/api/anthropic` (S1)                                | S1, S9          |
 
 S7's comment claims the weekly `unit:6` entry appears "部分套餐/国际站才有" (some plans /
 international only), but both platforms' official docs say every plan has both windows —

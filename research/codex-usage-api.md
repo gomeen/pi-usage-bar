@@ -27,14 +27,14 @@ GET https://chatgpt.com/backend-api/wham/usage
 
 Related endpoints discovered (not needed for a usage bar, listed for completeness):
 
-| Endpoint | Purpose | Source |
-|---|---|---|
-| `GET {base}/wham/rate-limit-reset-credits` | list purchasable/banked reset credits (`available_count`) | `rate_limit_resets.rs:71-79`; CodexBar `fetchRateLimitResetCredits` |
-| `POST {base}/wham/rate-limit-reset-credits/consume` | redeem a reset credit | `rate_limit_resets.rs:82-104` |
-| `GET {base}/wham/accounts/check` | account/workspace bootstrap info | `client.rs:425-438` |
-| `GET {base}/wham/profiles/me` | token usage profile | `client.rs:440-453` |
-| `GET {base}/wham/spend-controls/current-user/monthly-usage` | workspace monthly spend | CodexBar `fetchSpendControlsMonthlyUsage` |
-| `GET {base}/wham/accounts/{account_id}/remaining_balance` | workspace credit balance | CodexBar `fetchWorkspaceRemainingBalance` |
+| Endpoint                                                    | Purpose                                                   | Source                                                              |
+| ----------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------- |
+| `GET {base}/wham/rate-limit-reset-credits`                  | list purchasable/banked reset credits (`available_count`) | `rate_limit_resets.rs:71-79`; CodexBar `fetchRateLimitResetCredits` |
+| `POST {base}/wham/rate-limit-reset-credits/consume`         | redeem a reset credit                                     | `rate_limit_resets.rs:82-104`                                       |
+| `GET {base}/wham/accounts/check`                            | account/workspace bootstrap info                          | `client.rs:425-438`                                                 |
+| `GET {base}/wham/profiles/me`                               | token usage profile                                       | `client.rs:440-453`                                                 |
+| `GET {base}/wham/spend-controls/current-user/monthly-usage` | workspace monthly spend                                   | CodexBar `fetchSpendControlsMonthlyUsage`                           |
+| `GET {base}/wham/accounts/{account_id}/remaining_balance`   | workspace credit balance                                  | CodexBar `fetchWorkspaceRemainingBalance`                           |
 
 ### 1.2 Authentication
 
@@ -62,51 +62,65 @@ Consensus wire shape of `GET /wham/usage` (from `codex-rs/codex-backend-openapi-
 
 ```jsonc
 {
-  "plan_type": "plus",                     // enum, see §3
-  "rate_limit": {                          // nullable (whole object)
-    "allowed": true,                       // bool
-    "limit_reached": false,                // bool
-    "primary_window": {                    // nullable; a window object, see below
-      "used_percent": 42,                  // int, 0-100
-      "limit_window_seconds": 18000,       // int, window length (18000 = 5h, 604800 = 7d)
-      "reset_after_seconds": 9123,         // int, seconds until this window resets
-      "reset_at": 1750000000               // int, Unix epoch SECONDS of reset
-    },
-    "secondary_window": { /* same shape */ }
-  },
-  "credits": {                             // nullable
-    "has_credits": false,                  // bool
-    "unlimited": false,                    // bool
-    "balance": "12.50",                    // string OR number (CodexBar decodes both), nullable
-    "approx_local_messages": null,         // opaque arrays, ignored by all three consumers
-    "approx_cloud_messages": null
-  },
-  "spend_control": {                       // nullable; workspace/individual spend caps
-    "reached": false,                      // bool
-    "individual_limit": {                  // nullable
-      "limit": 100.0,                      // number
-      "used": 37.2,                        // number
-      "remaining_percent": 62.8,           // number
-      "resets_at": 1750100000              // int, epoch seconds
-    }
-  },
-  "additional_rate_limits": [              // optional; model-specific quotas
-    {
-      "limit_name": "GPT-5.3-Codex-Spark", // display name
-      "metered_feature": "codex_spark",    // stable id; CLI uses it as limit_id
-      "rate_limit": { /* same window shape */ }
-    }
-  ],
-  "rate_limit_reached_type": {             // nullable
-    "type": "rate_limit_reached"           // or workspace_owner_credits_depleted |
-  }                                        // workspace_member_credits_depleted |
-                                           // workspace_owner_usage_limit_reached |
-                                           // workspace_member_usage_limit_reached
-  // Fields the official CLI also reads on this endpoint (types.rs:56-70),
-  // present in responses but not in the generated OpenAPI export:
-  , "account_id": "...", "user_id": "...",
-  "rate_limit_reset_credits": { "available_count": 0 },
-  "rate_limit_upsell": { /* opaque, both impls keep it as raw JSON */ }
+	"plan_type": "plus", // enum, see §3
+	"rate_limit": {
+		// nullable (whole object)
+		"allowed": true, // bool
+		"limit_reached": false, // bool
+		"primary_window": {
+			// nullable; a window object, see below
+			"used_percent": 42, // int, 0-100
+			"limit_window_seconds": 18000, // int, window length (18000 = 5h, 604800 = 7d)
+			"reset_after_seconds": 9123, // int, seconds until this window resets
+			"reset_at": 1750000000 // int, Unix epoch SECONDS of reset
+		},
+		"secondary_window": {
+			/* same shape */
+		}
+	},
+	"credits": {
+		// nullable
+		"has_credits": false, // bool
+		"unlimited": false, // bool
+		"balance": "12.50", // string OR number (CodexBar decodes both), nullable
+		"approx_local_messages": null, // opaque arrays, ignored by all three consumers
+		"approx_cloud_messages": null
+	},
+	"spend_control": {
+		// nullable; workspace/individual spend caps
+		"reached": false, // bool
+		"individual_limit": {
+			// nullable
+			"limit": 100.0, // number
+			"used": 37.2, // number
+			"remaining_percent": 62.8, // number
+			"resets_at": 1750100000 // int, epoch seconds
+		}
+	},
+	"additional_rate_limits": [
+		// optional; model-specific quotas
+		{
+			"limit_name": "GPT-5.3-Codex-Spark", // display name
+			"metered_feature": "codex_spark", // stable id; CLI uses it as limit_id
+			"rate_limit": {
+				/* same window shape */
+			}
+		}
+	],
+	"rate_limit_reached_type": {
+		// nullable
+		"type": "rate_limit_reached" // or workspace_owner_credits_depleted |
+	}, // workspace_member_credits_depleted |
+	// workspace_owner_usage_limit_reached |
+	// workspace_member_usage_limit_reached
+	// Fields the official CLI also reads on this endpoint (types.rs:56-70),
+	// present in responses but not in the generated OpenAPI export:
+	"account_id": "...",
+	"user_id": "...",
+	"rate_limit_reset_credits": { "available_count": 0 },
+	"rate_limit_upsell": {
+		/* opaque, both impls keep it as raw JSON */
+	}
 }
 ```
 
@@ -146,7 +160,7 @@ Notes, field by field:
 For the polling client (what pi-usage-bar will be):
 
 - **401 Unauthorized** — expired/invalid access token. CodexBar maps this to "Codex OAuth token expired or invalid. Run `codex login` to re-authenticate" (`CodexOAuthFetchError.unauthorized`, CodexOAuthUsageFetcher.swift:348-352). Remedy: refresh via the refresh-token grant at `https://auth.openai.com/oauth/token` (official CLI `login/src/auth/manager.rs:1793-1799`) or re-login. pi-usage-bars surfaces the HTTP error string only.
-- **429** on `/wham/usage` itself is not specifically handled by any of the three implementations (pi-usage-bars reports `error`; CodexBar buckets it under `serverError`). Its retry/backoff machinery exists only in pi-usage-bars' *Claude* path, not the Codex path.
+- **429** on `/wham/usage` itself is not specifically handled by any of the three implementations (pi-usage-bars reports `error`; CodexBar buckets it under `serverError`). Its retry/backoff machinery exists only in pi-usage-bars' _Claude_ path, not the Codex path.
 
 For the chat-completion stream (documented because it defines Codex rate-limit semantics), the official CLI shows two channels:
 
@@ -154,17 +168,17 @@ For the chat-completion stream (documented because it defines Codex rate-limit s
 
 ```jsonc
 {
-  "error": {
-    "type": "usage_limit_reached",   // or "usage_not_included", "insufficient_quota"
-    "code": "...",                   // alt discriminator: insufficient_quota |
-                                     // credit_balance_exhausted |
-                                     // organization_spend_limit_exceeded |
-                                     // project_spend_limit_exceeded |
-                                     // organization_usage_limit_exceeded
-    "plan_type": "plus",
-    "resets_at": 1750000000,         // epoch seconds
-    "limit_window_minutes": 300      // which window hit the cap
-  }
+	"error": {
+		"type": "usage_limit_reached", // or "usage_not_included", "insufficient_quota"
+		"code": "...", // alt discriminator: insufficient_quota |
+		// credit_balance_exhausted |
+		// organization_spend_limit_exceeded |
+		// project_spend_limit_exceeded |
+		// organization_usage_limit_exceeded
+		"plan_type": "plus",
+		"resets_at": 1750000000, // epoch seconds
+		"limit_window_minutes": 300 // which window hit the cap
+	}
 }
 ```
 

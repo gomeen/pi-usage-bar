@@ -1,4 +1,5 @@
 ---
+
 title: Config schema and slash command surface
 labels: [wayfinder:grilling]
 status: closed
@@ -18,23 +19,23 @@ v1 配置 schema 定稿：全部键名与默认值（对齐 cs 命名 + `display
 
 **键表（v1 全量）**：
 
-| 键 | 默认 | 说明 |
-|---|---|---|
-| `style` | `"aurora"` | aurora \| ring \| classic |
-| `bar_glyph` | `"block"` | block \| thin（aurora 用） |
-| `theme` | `"graphite"` | graphite \| `"pi"`（跟随 pi 主题） |
-| `density` | `"regular"` | compact \| regular \| cozy |
-| `bar_width` | `12` | bar 格数 |
-| `color_ok/color_warn/color_hot` | `""` | RGB 覆盖，空=默认 |
-| `warning_threshold` | `30` | 百分比 |
-| `critical_threshold` | `70` | 百分比 |
-| `display.mode` | `"active"` | active \| all |
-| `display.providers` | `[]` | 空=全部；钉死只显这几家 |
-| `providerMap` | `{}` | 自定义 ID→plan/relay，见 008 |
-| `refresh_minutes` | `2` | 轮询间隔 |
-| `show_resets` | `true` | ↻ 官方重置公告 |
-| `show_balance` | `true` | 中转站余额探测 |
-| `currency` | `"$"` | 余额货币符号 |
+| 键                              | 默认         | 说明                               |
+| ------------------------------- | ------------ | ---------------------------------- |
+| `style`                         | `"aurora"`   | aurora \| ring \| classic          |
+| `bar_glyph`                     | `"block"`    | block \| thin（aurora 用）         |
+| `theme`                         | `"graphite"` | graphite \| `"pi"`（跟随 pi 主题） |
+| `density`                       | `"regular"`  | compact \| regular \| cozy         |
+| `bar_width`                     | `12`         | bar 格数                           |
+| `color_ok/color_warn/color_hot` | `""`         | RGB 覆盖，空=默认                  |
+| `warning_threshold`             | `30`         | 百分比                             |
+| `critical_threshold`            | `70`         | 百分比                             |
+| `display.mode`                  | `"active"`   | active \| all                      |
+| `display.providers`             | `[]`         | 空=全部；钉死只显这几家            |
+| `providerMap`                   | `{}`         | 自定义 ID→plan/relay，见 008       |
+| `refresh_minutes`               | `2`          | 轮询间隔                           |
+| `show_resets`                   | `true`       | ↻ 官方重置公告                     |
+| `show_balance`                  | `true`       | 中转站余额探测                     |
+| `currency`                      | `"$"`        | 余额货币符号                       |
 
 另有 `PI_*_ENDPOINT` 环境变量覆盖端点（仅 env，不入文件）。
 

@@ -1,4 +1,5 @@
 ---
+
 title: Charting decisions locked
 labels: [wayfinder:grilling]
 status: closed

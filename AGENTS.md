@@ -33,16 +33,16 @@ The domain model `UsageSnapshot` (src/types.ts) flows through everything. Three 
 
 ## Specs by area
 
-| Area | Spec source |
-|---|---|
-| Codex API | `research/codex-usage-api.md` |
-| Claude API | `research/claude-usage-api.md` |
-| ZAI API | `research/zai-usage-api.md` |
-| MiniMax API | `research/minimax-usage-api.md` |
-| pi extension API | `research/pi-extension-api.md` |
-| Style (looks, colors, formats) | `research/cs-style-spec.md` + `issues/010-style-prototype.md` |
-| Detection & providerMap | `issues/008-provider-detection-mapping-spec.md` |
-| Config keys & commands | `issues/009-config-schema-slash-commands.md` |
-| Robustness (backoff/stale/fallback) | `issues/014-robustness-spec.md` |
-| Relay balance & resets | `issues/012-official-resets-in-scope.md`, `issues/013-post-research-display-relay-decisions.md` |
-| Release | `issues/015-release-process.md` |
+| Area                                | Spec source                                                                                     |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Codex API                           | `research/codex-usage-api.md`                                                                   |
+| Claude API                          | `research/claude-usage-api.md`                                                                  |
+| ZAI API                             | `research/zai-usage-api.md`                                                                     |
+| MiniMax API                         | `research/minimax-usage-api.md`                                                                 |
+| pi extension API                    | `research/pi-extension-api.md`                                                                  |
+| Style (looks, colors, formats)      | `research/cs-style-spec.md` + `issues/010-style-prototype.md`                                   |
+| Detection & providerMap             | `issues/008-provider-detection-mapping-spec.md`                                                 |
+| Config keys & commands              | `issues/009-config-schema-slash-commands.md`                                                    |
+| Robustness (backoff/stale/fallback) | `issues/014-robustness-spec.md`                                                                 |
+| Relay balance & resets              | `issues/012-official-resets-in-scope.md`, `issues/013-post-research-display-relay-decisions.md` |
+| Release                             | `issues/015-release-process.md`                                                                 |

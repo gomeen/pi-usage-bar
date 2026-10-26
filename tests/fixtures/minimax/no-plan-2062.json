@@ -1,4 +1,7 @@
 {
-	"base_resp": { "status_code": 2062, "status_msg": "no active token plan subscription" },
+	"base_resp": {
+		"status_code": 2062,
+		"status_msg": "no active token plan subscription"
+	},
 	"model_remains": []
 }

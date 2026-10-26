@@ -16,7 +16,9 @@ Load locations: user `~/.pi/agent/extensions/` (or `<agent-dir>/extensions/`), p
 ```typescript
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
-export default function (pi: ExtensionAPI) { /* register capabilities */ }
+export default function (pi: ExtensionAPI) {
+	/* register capabilities */
+}
 ```
 [docs/extensions.md §Create and load an extension]
 
@@ -35,28 +37,28 @@ export default function (pi: ExtensionAPI) { /* register capabilities */ }
 ```typescript
 export type ExtensionMode = "tui" | "rpc" | "json" | "print";
 export interface ExtensionContext {
-    ui: ExtensionUIContext;                 // dialogs, notify, setStatus, custom, theme, ...
-    mode: ExtensionMode;                    // guard with ctx.mode === "tui"
-    hasUI: boolean;                         // true in TUI and RPC modes
-    cwd: string;
-    sessionManager: ReadonlySessionManager;
-    modelRegistry: ModelRegistry;           // "Model registry for API key resolution"
-    model: Model<any> | undefined;          // current model (may be undefined)
-    scopedModels: readonly ScopedModel[];
-    thinkingLevel?: ThinkingLevel;
-    isIdle(): boolean;
-    isProjectTrusted(): boolean;
-    // + signal/abort/shutdown/compact/getContextUsage/getSystemPrompt actions
-    //   (ExtensionContextActions, dist/core/extensions/types.d.ts L1661)
+	ui: ExtensionUIContext; // dialogs, notify, setStatus, custom, theme, ...
+	mode: ExtensionMode; // guard with ctx.mode === "tui"
+	hasUI: boolean; // true in TUI and RPC modes
+	cwd: string;
+	sessionManager: ReadonlySessionManager;
+	modelRegistry: ModelRegistry; // "Model registry for API key resolution"
+	model: Model<any> | undefined; // current model (may be undefined)
+	scopedModels: readonly ScopedModel[];
+	thinkingLevel?: ThinkingLevel;
+	isIdle(): boolean;
+	isProjectTrusted(): boolean;
+	// + signal/abort/shutdown/compact/getContextUsage/getSystemPrompt actions
+	//   (ExtensionContextActions, dist/core/extensions/types.d.ts L1661)
 }
 export interface ExtensionCommandContext extends ExtensionContext {
-    getSystemPromptOptions(): BuildSystemPromptOptions;
-    waitForIdle(): Promise<void>;
-    newSession(opts?): Promise<{ cancelled: boolean }>;
-    fork(entryId, opts?): Promise<{ cancelled: boolean }>;
-    navigateTree(targetId, opts?): Promise<{ cancelled: boolean }>;
-    switchSession(sessionPath, opts?): Promise<{ cancelled: boolean }>;
-    reload(): Promise<void>;
+	getSystemPromptOptions(): BuildSystemPromptOptions;
+	waitForIdle(): Promise<void>;
+	newSession(opts?): Promise<{ cancelled: boolean }>;
+	fork(entryId, opts?): Promise<{ cancelled: boolean }>;
+	navigateTree(targetId, opts?): Promise<{ cancelled: boolean }>;
+	switchSession(sessionPath, opts?): Promise<{ cancelled: boolean }>;
+	reload(): Promise<void>;
 }
 ```
 [dist/core/extensions/types.d.ts L213–330, L1661–1707]
@@ -165,19 +167,19 @@ The sanctioned path is `ctx.modelRegistry` (the `ModelRegistry` facade "exposed 
 
 ```typescript
 export interface BaseModel<TApi extends string> {
-    id: string;
-    name: string;
-    api: TApi;
-    provider: ProviderId;   // e.g. "anthropic", "openai-codex"
-    baseUrl: string;        // e.g. "https://api.anthropic.com"
-    input: ModelInputModality[];
-    cost: ModelCost;
-    headers?: Record<string, string>;
+	id: string;
+	name: string;
+	api: TApi;
+	provider: ProviderId; // e.g. "anthropic", "openai-codex"
+	baseUrl: string; // e.g. "https://api.anthropic.com"
+	input: ModelInputModality[];
+	cost: ModelCost;
+	headers?: Record<string, string>;
 }
 ```
 [node_modules/@earendil-works/pi-ai/dist/types.d.ts L628–640]
 
-So `ctx.model.provider` + `ctx.model.baseUrl` directly answer (a). hknet additionally routes: it trusts the provider id only when the model's baseUrl host matches the official inference host (hardcoded `PROVIDER_HOSTS` map, e.g. `claude: ["api.anthropic.com"]`, `codex: ["chatgpt.com"]`, `zai: ["api.z.ai"]`, `minimax: ["api.minimax.io"]`, `"minimax-cn": ["api.minimaxi.com"]`); a model on an unknown host shows no bar, except gateway hosts (openrouter, vercel) where the *model's own* credential is used (`credential: "model"` vs `"provider"`). [hknet core.ts `PROVIDER_HOSTS`, `detectProviderRoute`, `isProviderRoute`]
+So `ctx.model.provider` + `ctx.model.baseUrl` directly answer (a). hknet additionally routes: it trusts the provider id only when the model's baseUrl host matches the official inference host (hardcoded `PROVIDER_HOSTS` map, e.g. `claude: ["api.anthropic.com"]`, `codex: ["chatgpt.com"]`, `zai: ["api.z.ai"]`, `minimax: ["api.minimax.io"]`, `"minimax-cn": ["api.minimaxi.com"]`); a model on an unknown host shows no bar, except gateway hosts (openrouter, vercel) where the _model's own_ credential is used (`credential: "model"` vs `"provider"`). [hknet core.ts `PROVIDER_HOSTS`, `detectProviderRoute`, `isProviderRoute`]
 
 ### (b) Access token for a specific provider id
 
@@ -196,9 +198,9 @@ isUsingOAuth(model: Model<Api>): boolean;
 
 ```typescript
 export interface AuthResult {
-    auth: ModelAuth;      // { apiKey?: string; headers?: ProviderHeaders; baseUrl?: string }
-    env?: ProviderEnv;
-    source?: string;      // human-readable label: "ANTHROPIC_API_KEY", "OAuth", "~/.aws/credentials"
+	auth: ModelAuth; // { apiKey?: string; headers?: ProviderHeaders; baseUrl?: string }
+	env?: ProviderEnv;
+	source?: string; // human-readable label: "ANTHROPIC_API_KEY", "OAuth", "~/.aws/credentials"
 }
 ```
 
@@ -210,11 +212,13 @@ export interface AuthResult {
    - token = `resolved?.auth.apiKey` if present;
    - else some OAuth flows expose the token only as a Bearer header: check `resolved?.auth.headers?.Authorization ?? .authorization`, strip `"Bearer "` prefix. (Kimi-coding OAuth works this way.)
 4. For gateway-routed models, use the model's own credential: `await ctx.modelRegistry.getApiKeyAndHeaders(model)` → `ResolvedRequestAuth`:
+
    ```typescript
    export type ResolvedRequestAuth =
      | { ok: true; apiKey?: string; headers?: ProviderHeaders; baseUrl?: string; env?: Record<string,string> }
      | { ok: false; error: string };
    ```
+
    [dist/core/model-registry.d.ts L8–16]
 5. Claude caveat: `AuthResult.source` is a human-readable label, not a type discriminator; hknet treats subscription (OAuth) only when `source === "OAuth"` and skips API-key Claude credentials, noting "Keep this source-label assumption in one place until ModelRegistry exposes the resolved credential type directly." `isUsingOAuth(model)` exists as a per-model alternative.
 
@@ -243,15 +247,18 @@ with imports `import { createProvider, envApiKeyAuth } from "@earendil-works/pi-
 
 ```typescript
 export declare class Theme {
-    get appearance(): ThemeAppearance;                       // "dark" | "light"
-    get colors(): Readonly<Record<ThemeToken, Color>>;       // concrete colors for all tokens
-    style(text: string, options: ThemeStyle): string;        // { fg?: ThemeColor | Color; bg?: ThemeBg | Color } extends TextAttributes (bold, …)
-    fg(color: ThemeColor, text: string): string;
-    bg(color: ThemeBg, text: string): string;
-    bold(text: string): string;
+	get appearance(): ThemeAppearance; // "dark" | "light"
+	get colors(): Readonly<Record<ThemeToken, Color>>; // concrete colors for all tokens
+	style(text: string, options: ThemeStyle): string; // { fg?: ThemeColor | Color; bg?: ThemeBg | Color } extends TextAttributes (bold, …)
+	fg(color: ThemeColor, text: string): string;
+	bg(color: ThemeBg, text: string): string;
+	bold(text: string): string;
 }
-export type ThemeAppearance = TerminalTheme;                 // "dark" | "light"
-export interface ThemeStyle extends TextAttributes { fg?: ThemeColor | Color; bg?: ThemeBg | Color; }
+export type ThemeAppearance = TerminalTheme; // "dark" | "light"
+export interface ThemeStyle extends TextAttributes {
+	fg?: ThemeColor | Color;
+	bg?: ThemeBg | Color;
+}
 ```
 [dist/modes/interactive/theme/theme.d.ts L36–72, L92]
 
@@ -280,10 +287,12 @@ export interface ThemeStyle extends TextAttributes { fg?: ThemeColor | Color; bg
 **Pi package model** [docs/packages.md]:
 
 - A package = ordinary directory or npm package. Conventional resource dirs (`extensions/`, `skills/`, `prompts/`, `themes/`) are auto-discovered; or declare explicitly under `package.json` `"pi"`:
+
   ```json
   { "name": "…", "keywords": ["pi-package"],
     "pi": { "extensions": ["./extensions/usage-bars/index.ts"], "skills": […], "prompts": ["…*.md"], "themes": ["…*.json"] } }
   ```
+
   Paths relative to package root; arrays accept glob patterns and exclusions. `pi-package` keyword makes it discoverable in the pi.dev package gallery; optional `pi.image`/`pi.video` previews. (hknet also sets `pi.image`.)
 - **Install forms**: `pi install npm:@example/pi-tools@1.0.0` (installed under pi's npm dir; **versioned npm specs are pinned**); `pi install git:github.com/example/pi-tools@v1` (cloned and reconciled to the ref; **git tags/commits pinned, `pi update` does not move a configured ref**); `pi install https://github.com/example/pi-tools` — "URL … treated as a git source"; `pi install ./local-package` (loaded from resolved path, not copied). [docs/packages.md §Install and manage packages, §Choose a source]
 - **Where declarations go**: personal installs write to `~/.pi/agent/settings.json` under `packages`; `--local` writes `.pi/settings.json` (loads only after project trust). `pi list`, `pi remove <source>`, `pi update --extensions` reconcile. `-e <pkg>` tries one invocation without persisting. [docs/packages.md]
@@ -298,15 +307,15 @@ export interface ThemeStyle extends TextAttributes { fg?: ThemeColor | Color; bg
 
 Verified from the installed 1.4.0 model catalog bundle [dist/bundle/chunks/chunk-MM3LKT73.js provider definitions] and `pi --list-models` on this machine:
 
-| Vendor | Provider ID | Display name | Default baseUrl | Auth |
-|---|---|---|---|---|
-| Anthropic | `anthropic` | "Anthropic" | `https://api.anthropic.com` | `ANTHROPIC_API_KEY` api-key auth **and** OAuth "Anthropic (Claude Pro/Max)" subscription |
-| OpenAI (chat) | `openai` | "OpenAI" | `https://api.openai.com/v1` | `OPENAI_API_KEY` + OAuth "OpenAI (ChatGPT subscription)" |
-| OpenAI Codex | `openai-codex` | "OpenAI Codex (legacy)" in 1.4.0 | `https://chatgpt.com/backend-api` | OAuth "OpenAI (ChatGPT Plus/Pro)" only |
-| ZAI global | `zai` | "Z.AI" | `https://api.z.ai/api/coding/paas/v4` | `ZAI_API_KEY` (docs: "ZAI Coding Plan (Global)") |
-| ZAI China | `zai-coding-cn` | "Z.AI Coding CN" | `https://open.bigmodel.cn/api/coding/paas/v4` | `ZAI_CODING_CN_API_KEY` |
-| MiniMax global | `minimax` | "MiniMax" | `https://api.minimax.io/anthropic` | `MINIMAX_API_KEY` |
-| MiniMax China | `minimax-cn` | "MiniMax CN" | `https://api.minimaxi.com/anthropic` | `MINIMAX_CN_API_KEY` |
+| Vendor         | Provider ID     | Display name                     | Default baseUrl                               | Auth                                                                                     |
+| -------------- | --------------- | -------------------------------- | --------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Anthropic      | `anthropic`     | "Anthropic"                      | `https://api.anthropic.com`                   | `ANTHROPIC_API_KEY` api-key auth **and** OAuth "Anthropic (Claude Pro/Max)" subscription |
+| OpenAI (chat)  | `openai`        | "OpenAI"                         | `https://api.openai.com/v1`                   | `OPENAI_API_KEY` + OAuth "OpenAI (ChatGPT subscription)"                                 |
+| OpenAI Codex   | `openai-codex`  | "OpenAI Codex (legacy)" in 1.4.0 | `https://chatgpt.com/backend-api`             | OAuth "OpenAI (ChatGPT Plus/Pro)" only                                                   |
+| ZAI global     | `zai`           | "Z.AI"                           | `https://api.z.ai/api/coding/paas/v4`         | `ZAI_API_KEY` (docs: "ZAI Coding Plan (Global)")                                         |
+| ZAI China      | `zai-coding-cn` | "Z.AI Coding CN"                 | `https://open.bigmodel.cn/api/coding/paas/v4` | `ZAI_CODING_CN_API_KEY`                                                                  |
+| MiniMax global | `minimax`       | "MiniMax"                        | `https://api.minimax.io/anthropic`            | `MINIMAX_API_KEY`                                                                        |
+| MiniMax China  | `minimax-cn`    | "MiniMax CN"                     | `https://api.minimaxi.com/anthropic`          | `MINIMAX_CN_API_KEY`                                                                     |
 
 Notes:
 - No other ids for these four vendors exist in the catalog (no `glm*`, no `zhipu` built-in; `cc-switch-zhipu-glm` on this machine is a user `models.json` custom provider). `pi --list-models` only lists providers with configured auth, so the bundle is the authoritative source for the full catalog.
@@ -323,7 +332,7 @@ Notes:
 **Open questions the docs don't fully cover:**
 
 1. **`AuthResult.source` string stability** — `"OAuth"` label matching (hknet's Claude-subscription heuristic) is not a documented contract; the docs themselves admit no type discriminator exists. `isUsingOAuth(model)` may be the better check but isn't documented for provider-id-level (only model-level) use.
-2. **Extension-settings API** — no documented way to *write* pi settings or register an extension section in `/settings`; own-file convention (`~/.pi/agent/<name>.json` à la preset.ts) is example-only, not spec. No XDG involvement documented.
+2. **Extension-settings API** — no documented way to _write_ pi settings or register an extension section in `/settings`; own-file convention (`~/.pi/agent/<name>.json` à la preset.ts) is example-only, not spec. No XDG involvement documented.
 3. **`AuthStatus` exact shape** — `getProviderAuthStatus` returns `AuthStatus` from `provider-composer.ts` (not in the public typings read here); hknet only relies on `.configured`. Verify field list before depending on more.
 4. **`openai` vs `openai-codex` subscription split in 1.4.0+** — which provider id holds the ChatGPT-plan OAuth credential and which usage endpoint answers for it (bundle shows `openai` with "Sign in with ChatGPT" OAuth; the codex usage API historically hangs off `chatgpt.com/backend-api`). Needs a live `/login` test.
 5. **Status line width budget** — all extensions' statuses share one truncated footer line; no documented per-extension width guarantee or wrap behavior for very long bars (hknet keeps its bar ~60 cols; claude-code-style layouts may need `setFooter` instead).

@@ -1,4 +1,5 @@
 ---
+
 title: Style prototype with fake data
 labels: [wayfinder:prototype]
 status: closed

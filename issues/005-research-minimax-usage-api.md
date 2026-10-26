@@ -1,4 +1,5 @@
 ---
+
 title: Research MiniMax usage API data contract
 labels: [wayfinder:research]
 status: closed

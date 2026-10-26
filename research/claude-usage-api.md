@@ -37,23 +37,26 @@ anthropic-beta: oauth-2025-04-20
 
 ```jsonc
 {
-  "five_hour": {            // 5 小时会话窗口；Enterprise 账号可为 null 或缺失
-    "utilization": 25,      // 已用百分比，整数 0-100；可 >100（超额态）
-    "resets_at": "2026-01-28T15:00:00Z"  // ISO 8601 UTC 字符串
-  },
-  "seven_day": {            // 周窗口；同样可 null/缺失
-    "utilization": 40,
-    "resets_at": "2026-02-01T00:00:00Z"
-  },
-  "seven_day_sonnet": { "utilization": 0, "resets_at": "..." },  // 可选，按模型的周配额（legacy 平铺键）
-  "seven_day_opus":   { "utilization": 0, "resets_at": "..." },  // 可选
-  "extra_usage": {          // 可选：超额付费额度（usage credits）
-    "is_enabled": true,
-    "used_credits": 500,    // 已用，单位美分
-    "monthly_limit": 10000, // 月上限，美分
-    "utilization": 12.5,    // 较新字段：extra usage 自身百分比（ccstatusline 解析）
-    "currency": "USD"       // 较新字段：ISO 4217（ccstatusline 解析）
-  }
+	"five_hour": {
+		// 5 小时会话窗口；Enterprise 账号可为 null 或缺失
+		"utilization": 25, // 已用百分比，整数 0-100；可 >100（超额态）
+		"resets_at": "2026-01-28T15:00:00Z" // ISO 8601 UTC 字符串
+	},
+	"seven_day": {
+		// 周窗口；同样可 null/缺失
+		"utilization": 40,
+		"resets_at": "2026-02-01T00:00:00Z"
+	},
+	"seven_day_sonnet": { "utilization": 0, "resets_at": "..." }, // 可选，按模型的周配额（legacy 平铺键）
+	"seven_day_opus": { "utilization": 0, "resets_at": "..." }, // 可选
+	"extra_usage": {
+		// 可选：超额付费额度（usage credits）
+		"is_enabled": true,
+		"used_credits": 500, // 已用，单位美分
+		"monthly_limit": 10000, // 月上限，美分
+		"utilization": 12.5, // 较新字段：extra usage 自身百分比（ccstatusline 解析）
+		"currency": "USD" // 较新字段：ISO 4217（ccstatusline 解析）
+	}
 }
 ```
 
@@ -72,12 +75,16 @@ anthropic-beta: oauth-2025-04-20
 
 ```jsonc
 {
-  "limits": [
-    { "kind": "session",      "percent": 25, "resets_at": "ISO" },
-    { "kind": "weekly_all",   "percent": 40, "resets_at": "ISO" },
-    { "kind": "weekly_scoped","percent": 10, "resets_at": "ISO",
-      "scope": { "model": { "display_name": "Claude ... Sonnet" } } }
-  ]
+	"limits": [
+		{ "kind": "session", "percent": 25, "resets_at": "ISO" },
+		{ "kind": "weekly_all", "percent": 40, "resets_at": "ISO" },
+		{
+			"kind": "weekly_scoped",
+			"percent": 10,
+			"resets_at": "ISO",
+			"scope": { "model": { "display_name": "Claude ... Sonnet" } }
+		}
+	]
 }
 ```
 
@@ -104,10 +111,10 @@ anthropic-beta: oauth-2025-04-20
 
 ## 4. 重置时间字段与格式（对照表）
 
-| 来源 | 字段 | 格式 | 解析方式（参考实现） |
-|---|---|---|---|
-| 直连 API `/api/oauth/usage` | `five_hour.resets_at` / `seven_day.resets_at` / `limits[].resets_at` | ISO 8601 UTC **字符串**（`"2026-01-28T15:00:00Z"`） | `Date.parse`（ccstatusline usage-windows.ts:255）、`new Date(iso)`（pi-usage-bars core.ts:298） |
-| statusline stdin（Claude Code ≥2.1.80） | `rate_limits.five_hour.resets_at` 等 | **Unix epoch 秒**（数字） | `new Date(epochSeconds*1000)`（ccstatusline usage-prefetch.ts:184-189）、`datetime.fromtimestamp(resets_at, tz=utc)`（cs core.py:1470,1482） |
+| 来源                                    | 字段                                                                 | 格式                                                | 解析方式（参考实现）                                                                                                                         |
+| --------------------------------------- | -------------------------------------------------------------------- | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| 直连 API `/api/oauth/usage`             | `five_hour.resets_at` / `seven_day.resets_at` / `limits[].resets_at` | ISO 8601 UTC **字符串**（`"2026-01-28T15:00:00Z"`） | `Date.parse`（ccstatusline usage-windows.ts:255）、`new Date(iso)`（pi-usage-bars core.ts:298）                                              |
+| statusline stdin（Claude Code ≥2.1.80） | `rate_limits.five_hour.resets_at` 等                                 | **Unix epoch 秒**（数字）                           | `new Date(epochSeconds*1000)`（ccstatusline usage-prefetch.ts:184-189）、`datetime.fromtimestamp(resets_at, tz=utc)`（cs core.py:1470,1482） |
 
 官方 statusline 文档（docs.claude.com/en/docs/claude-code/statusline）原文确认 stdin 侧：「`rate_limits.five_hour.resets_at`, `rate_limits.seven_day.resets_at` — Unix epoch seconds when the 5-hour or 7-day rate limit window resets」。
 
@@ -143,13 +150,13 @@ anthropic-beta: oauth-2025-04-20
 
 ## 8. 官方 vs 社区文档现状
 
-| 内容 | 状态 | 来源 |
-|---|---|---|
-| 窗口语义（5h/周/Fable 独立/共享/固定重置点）、计划档位 5x/20x | **官方** | support.claude.com 8325606 / 11049741 / 11145838；claude.com/pricing |
-| statusline stdin `rate_limits.*` 字段（含 spend_limit、版本门槛） | **官方** | docs.claude.com/en/docs/claude-code/statusline |
-| `oauth-2025-04-20` beta header、`/v1/oauth/token` | **官方 SDK 常量**（端点语义即「OAuth bearer 请求必带」） | anthropics/anthropic-sdk-go config/federation.go:25,38 |
-| `/api/oauth/usage` 端点本身、响应 JSON（平铺桶、limits[]、extra_usage） | **社区逆向，无官方文档，随时可变** | pi-usage-bars、ccstatusline（#343/#503/#413 注释）、openusage-cli（自述「Reverse-engineered, undocumented API. May change without notice.」）、opencode-anthropic-auth、Rust usus/cship/vct-core、moshi-skill #1 |
-| OAuth 流程细节（client_id、PKCE、JSON body、Keychain） | **社区逆向**（但对 Claude Code OSS 逐行引用） | opencode-anthropic-auth docs/claude-code-auth-and-headers-reference.md |
+| 内容                                                                    | 状态                                                     | 来源                                                                                                                                                                                                             |
+| ----------------------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 窗口语义（5h/周/Fable 独立/共享/固定重置点）、计划档位 5x/20x           | **官方**                                                 | support.claude.com 8325606 / 11049741 / 11145838；claude.com/pricing                                                                                                                                             |
+| statusline stdin `rate_limits.*` 字段（含 spend_limit、版本门槛）       | **官方**                                                 | docs.claude.com/en/docs/claude-code/statusline                                                                                                                                                                   |
+| `oauth-2025-04-20` beta header、`/v1/oauth/token`                       | **官方 SDK 常量**（端点语义即「OAuth bearer 请求必带」） | anthropics/anthropic-sdk-go config/federation.go:25,38                                                                                                                                                           |
+| `/api/oauth/usage` 端点本身、响应 JSON（平铺桶、limits[]、extra_usage） | **社区逆向，无官方文档，随时可变**                       | pi-usage-bars、ccstatusline（#343/#503/#413 注释）、openusage-cli（自述「Reverse-engineered, undocumented API. May change without notice.」）、opencode-anthropic-auth、Rust usus/cship/vct-core、moshi-skill #1 |
+| OAuth 流程细节（client_id、PKCE、JSON body、Keychain）                  | **社区逆向**（但对 Claude Code OSS 逐行引用）            | opencode-anthropic-auth docs/claude-code-auth-and-headers-reference.md                                                                                                                                           |
 
 对实现的要求：按「松散解析 + 逐字段回退」设计（平铺桶优先、`limits[]` 回退），未知字段忽略，percent/resets_at 各自独立回退，与 ccstatusline 同策略。
 

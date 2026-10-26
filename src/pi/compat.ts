@@ -12,7 +12,7 @@ import type { ProviderCredential } from "../types.js";
 
 /** Heuristic: does this auth source label look like an OAuth subscription? */
 export function isOAuthSourceLabel(source: string | undefined): boolean {
-  return source === "OAuth" || source === "oauth";
+	return source === "OAuth" || source === "oauth";
 }
 
 /**
@@ -20,8 +20,8 @@ export function isOAuthSourceLabel(source: string | undefined): boolean {
  * collision — it may carry ChatGPT-Account-Id style per-account headers).
  */
 export function mergeCredentialHeaders(
-  mandatory: Record<string, string>,
-  cred: ProviderCredential,
+	mandatory: Record<string, string>,
+	cred: ProviderCredential,
 ): Record<string, string> {
-  return { ...mandatory, ...cred.headers };
+	return { ...mandatory, ...cred.headers };
 }

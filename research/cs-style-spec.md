@@ -13,19 +13,19 @@ rules, the color system, thresholds, density, and the config surface.
 
 Note on a naming trap: `cs/render_thin.py` is **not** the `━` renderer — it is
 the daemon-client render path ("thin status-line render client", cs/render_thin.py:1-9).
-The thin *look* is the `bar_glyph="thin"` branch inside `render_aurora`
+The thin _look_ is the `bar_glyph="thin"` branch inside `render_aurora`
 (cs/styles.py:233, cxs/styles.py:216).
 
 ---
 
 ## 0. Shared vocabulary
 
-| Term | Meaning | Source |
-|---|---|---|
-| style | layout (aurora / ring / classic / capsule / hairline) | cs/styles.py:1-6 |
-| theme | palette (graphite only in cs; 8 themes in cxs) | cs/themes.py:1-7 |
-| line 1 | the quota/model/cost line produced by the renderer | cs/styles.py:946-967 |
-| segment | one `parts[]` element; segments are joined by the style's separator | cs/styles.py:287 |
+| Term    | Meaning                                                             | Source               |
+| ------- | ------------------------------------------------------------------- | -------------------- |
+| style   | layout (aurora / ring / classic / capsule / hairline)               | cs/styles.py:1-6     |
+| theme   | palette (graphite only in cs; 8 themes in cxs)                      | cs/themes.py:1-7     |
+| line 1  | the quota/model/cost line produced by the renderer                  | cs/styles.py:946-967 |
+| segment | one `parts[]` element; segments are joined by the style's separator | cs/styles.py:287     |
 
 ANSI primitives (cs/styles.py:14-17, cs/styles.py:74):
 `RESET = "\033[0m"`, `BOLD = "\033[1m"`, `ITAL = "\033[3m"`,
@@ -92,7 +92,7 @@ body cs/styles.py:235-253):
 
 - `no_quota` (relay/Bedrock/Vertex): one segment
   `{MUTE}ctx{RESET} {bar(ctx_pct, 12)} {pct_text(ctx_pct, ctx_rgb)}` where
-  ctx_rgb uses the *context* thresholds 70/85 via `_severity_color`
+  ctx_rgb uses the _context_ thresholds 70/85 via `_severity_color`
   (cs/styles.py:276-278).
 - `quota_stale and msgs_pct is None and weekly_pct is None`: the whole line 1
   lead becomes the single notice `{fg(s_warn)}⟳ 5h/7d stale·restart{RESET}`
@@ -135,7 +135,7 @@ body cs/styles.py:235-253):
 **Separator** (`_line_separator`, cs/styles.py:116-126): for non-classic
 renderers `sep = f"{pad}{fg(edge)}│{RESET}{pad}"` where pad comes from
 `DENSITY_PAD = {"compact": "", "regular": " ", "cozy": "  "}`
-(cs/styles.py:85). So: compact `│`, regular ` │ `, cozy `  │  `. codex builds
+(cs/styles.py:85). So: compact `│`, regular `│`, cozy `  │  `. codex builds
 the same inline (cxs/styles.py:241-242).
 
 ### 1.2 aurora thin
@@ -182,7 +182,7 @@ if forecast and projection_pct(chip) is None:
 - `pct_text(p)` = `{INK}{BOLD}{int(round(p))}%{RESET}` — bold ink, **no
   right-alignment, no severity color** (severity lives in the glyph)
   (cxs/styles.py:304-308). `None` → `{MUTE}--%{RESET}`.
-- ` · resets {reset}` — the literal string ` · resets ` (space, U+00B7 middle
+- ` · resets {reset}` — the literal string `· resets` (space, U+00B7 middle
   dot, space) — continues the MUTE run started by the label (no RESET between
   label and resets); `emoji` may follow the reset text (cxs/styles.py:313-314).
   Shown only when reset is truthy and not `"--"`.
@@ -190,7 +190,7 @@ if forecast and projection_pct(chip) is None:
 **Separator**: `_RING_SEP = {"compact": "  ", "regular": "   ", "cozy": "    "}`
 — 2/3/4 plain spaces; regular density is the **triple-space separator**
 (cxs/styles.py:368, used at cxs/styles.py:324). The multi-line `render()`
-wrapper reuses `" | "` for classic, `"   "` for ring, ` │ ` otherwise when
+wrapper reuses `" | "` for classic, `"   "` for ring, `│` otherwise when
 packing rows (cxs/styles.py:1296-1310).
 
 **Other ring segments** (cxs/styles.py:323-352): identical to aurora —
@@ -228,7 +228,7 @@ cs/progress.py:468-643). Layout per quota dimension
   - optional `shimmer_phase` (default-off `bar_shimmer`) twinkles star glyphs
     in empty cells — deterministic hashes, `⋆` field 1-in-4 cells, flare
     `✦/✧` 1 tick in 6 (cs/progress.py:69-133) — out of scope for a port's
-    v1, but the *plain* render must skip it when phase is None.
+    v1, but the _plain_ render must skip it when phase is None.
 - fill_rgb for 5h/7d = the window severity rgb (projection-first;
   cs/progress.py:586-596); the label color and the `⏰{reset}` use the same
   color (cs/progress.py:597-601); the emoji is appended only on the 5h reset
@@ -247,7 +247,7 @@ cs/progress.py:468-643). Layout per quota dimension
   ` | cache {text}` three-level severity (cs/styles.py:372-381).
 - no_quota (cs/progress.py:496-537): `ctx[battery]` (context band 70/85,
   fill_rgb preset so the battery shows the same color), then neutral-ink
-  model, then balance — fuel-gauge `bal[battery]` on *remaining* % when
+  model, then balance — fuel-gauge `bal[battery]` on _remaining_ % when
   `balance_pct` is known (fill green-full→red-empty, thresholds ≤10% hot /
   ≤25% warn, cs/progress.py:38-56), `bal $X`-style text otherwise, then cost.
 - classic ignores `density` (its separator is fixed `" | "`, and
@@ -340,17 +340,17 @@ model suffixes like `(280.0k/1.0M)`.
 
 cs `themes.py` — the only theme (cs/themes.py:46-56):
 
-| Role | RGB | Meaning |
-|---|---|---|
-| ink | (218, 221, 225) | primary text (numbers, model) |
-| mute | (120, 125, 132) | secondary (labels, separators, units) |
-| edge | (75, 80, 88) | faint dividers, empty bar cells |
-| s_ok | **(78, 200, 91)** | calm green |
-| s_warn | (232, 178, 96) | amber |
-| s_hot | (232, 116, 116) | red |
+| Role                                                   | RGB                                                            | Meaning                                         |
+| ------------------------------------------------------ | -------------------------------------------------------------- | ----------------------------------------------- |
+| ink                                                    | (218, 221, 225)                                                | primary text (numbers, model)                   |
+| mute                                                   | (120, 125, 132)                                                | secondary (labels, separators, units)           |
+| edge                                                   | (75, 80, 88)                                                   | faint dividers, empty bar cells                 |
+| s_ok                                                   | **(78, 200, 91)**                                              | calm green                                      |
+| s_warn                                                 | (232, 178, 96)                                                 | amber                                           |
+| s_hot                                                  | (232, 116, 116)                                                | red                                             |
 | pill_5h / pill_7d / pill_model / pill_lang / pill_cost | (38,70,83) / (42,56,79) / (60,47,65) / (52,65,47) / (48,56,50) | classic/capsule pill bg (kept for Theme compat) |
-| pill_ink | (238, 235, 224) | text on pill/battery bg |
-| wt | (168, 152, 226) | worktree marker violet |
+| pill_ink                                               | (238, 235, 224)                                                | text on pill/battery bg                         |
+| wt                                                     | (168, 152, 226)                                                | worktree marker violet                          |
 
 codex-statebar's graphite is **identical except s_ok = (120, 200, 192)** (teal)
 (cxs/themes.py:42-49), and cxs ships 7 more themes (twilight, linen, nord,
@@ -370,7 +370,7 @@ truncating per channel, t=0 → a, t=1 → b (cs/progress.py:60-63). Sibling
 1. `proj = projection_pct(chip)`; if a usable projection exists, judge **the
    projection** against the fixed cap thresholds `PROJECTION_WARNING_THRESHOLD
    = 70.0` / `PROJECTION_CRITICAL_THRESHOLD = 85.0` (cs/progress.py:21-30) —
-   the window is colored by where it is *headed*. (The docstring's "warn 80 /
+   the window is colored by where it is _headed_. (The docstring's "warn 80 /
    crit 100" is stale; the constants at lines 25-26 are authoritative.)
 2. else if `current_pct` is not None, judge current pct against the
    **configurable comfort thresholds** (`normalize_thresholds`, default
@@ -438,8 +438,8 @@ CSI-m sequences from the final string (cs/styles.py:77-79, 318-320).
     gets its own row, remaining segments pack after
     (cs/styles.py:170-193, 969-1000); cxs instead packs whole segments into
     rows, dropping trailing ones only in drop mode (cxs/styles.py:1301-1316).
-  Final output is width-clipped per physical line (cs/styles.py:1101,
-  `clip_lines`).
+    Final output is width-clipped per physical line (cs/styles.py:1101,
+    `clip_lines`).
 
 ---
 
@@ -451,50 +451,50 @@ Resolution: CLI flag → env (`CLAUDE_STATUSBAR_STYLE`/`_THEME`) → file → de
 (cs/config.py:1-9, 487-503). Persistence is **sparse** (only non-default keys
 written, cs/config.py:297-317).
 
-| key | type | default | notes |
-|---|---|---|---|
-| style | str | `"aurora"` | aurora \| classic (cs/styles.py:1223-1226) |
-| theme | str | `"graphite"` | cs/config.py:24 |
-| density | str | `"regular"` | compact \| regular \| cozy |
-| bar_glyph | str | `"block"` | block \| thin — aurora cells |
-| looks_seen | int | 0 | picker bookkeeping, LOOKS_VERSION=1 |
-| auto_compact_width | int | 0 | deprecated no-op |
-| show_weekly | bool | true | 7d window |
-| show_per_model | bool | false | per-model scoped bars |
-| show_language | bool | true | `📚 ZH:band↑` segment |
-| show_cost | bool | false | `$ x.xx` segment |
-| show_balance | bool | true | relay balance (no-quota) |
-| balance_bar | bool | true | fuel-gauge vs text |
-| show_cache_age | bool | true | `❄` segment |
-| show_project_branch | bool | true | 2nd line |
-| show_ocs | bool | true | ocs address line |
-| show_cwd | bool | false | cwd segment (#30) |
-| cwd_style | str | `"basename"` | basename \| full |
-| narrow_layout | str | `"drop"` | drop \| stack |
-| show_todos | bool | true | activity line |
-| show_tools | bool | false | active tool |
-| show_tool_rollup | bool | false | completed tools rollup |
-| show_agents | bool | false | subagent lines |
-| show_ip_risk | bool | false | egress IP chip |
-| show_fp_risk | bool | true | custom-endpoint notice |
-| show_duration | bool | false | session duration |
-| show_lines | bool | true | +added −removed |
-| show_ahead_behind | bool | false | ↑N↓N |
-| show_version | bool | true | faint version |
-| show_mode | bool | false | ⚙ effort line |
-| mode_gradient | bool | true | static gradient on mode line |
-| bar_shimmer | bool | false | battery particles (classic) |
-| show_forecast | bool | true | `⚠~eta` chip |
-| show_projection | bool | true | `→NN%` chip |
-| cache_ttl_seconds | int | 300 | deprecated, auto-detected |
-| api_mode | str | `"auto"` | auto \| on \| off |
-| warning_threshold | float\|null | null→30.0 | comfort band |
-| critical_threshold | float\|null | null→70.0 | comfort band |
-| color_ok / color_warn / color_hot | str\|null | null | hex overrides |
-| color_worktree | str\|null | null | wt hue override |
-| worktree_glyph | str | `"🌳"` | 1-2 cells |
-| auto_upgrade | bool | true | |
-| lang | str | `"auto"` | auto \| zh \| en |
+| key                               | type        | default      | notes                                      |
+| --------------------------------- | ----------- | ------------ | ------------------------------------------ |
+| style                             | str         | `"aurora"`   | aurora \| classic (cs/styles.py:1223-1226) |
+| theme                             | str         | `"graphite"` | cs/config.py:24                            |
+| density                           | str         | `"regular"`  | compact \| regular \| cozy                 |
+| bar_glyph                         | str         | `"block"`    | block \| thin — aurora cells               |
+| looks_seen                        | int         | 0            | picker bookkeeping, LOOKS_VERSION=1        |
+| auto_compact_width                | int         | 0            | deprecated no-op                           |
+| show_weekly                       | bool        | true         | 7d window                                  |
+| show_per_model                    | bool        | false        | per-model scoped bars                      |
+| show_language                     | bool        | true         | `📚 ZH:band↑` segment                      |
+| show_cost                         | bool        | false        | `$ x.xx` segment                           |
+| show_balance                      | bool        | true         | relay balance (no-quota)                   |
+| balance_bar                       | bool        | true         | fuel-gauge vs text                         |
+| show_cache_age                    | bool        | true         | `❄` segment                                |
+| show_project_branch               | bool        | true         | 2nd line                                   |
+| show_ocs                          | bool        | true         | ocs address line                           |
+| show_cwd                          | bool        | false        | cwd segment (#30)                          |
+| cwd_style                         | str         | `"basename"` | basename \| full                           |
+| narrow_layout                     | str         | `"drop"`     | drop \| stack                              |
+| show_todos                        | bool        | true         | activity line                              |
+| show_tools                        | bool        | false        | active tool                                |
+| show_tool_rollup                  | bool        | false        | completed tools rollup                     |
+| show_agents                       | bool        | false        | subagent lines                             |
+| show_ip_risk                      | bool        | false        | egress IP chip                             |
+| show_fp_risk                      | bool        | true         | custom-endpoint notice                     |
+| show_duration                     | bool        | false        | session duration                           |
+| show_lines                        | bool        | true         | +added −removed                            |
+| show_ahead_behind                 | bool        | false        | ↑N↓N                                       |
+| show_version                      | bool        | true         | faint version                              |
+| show_mode                         | bool        | false        | ⚙ effort line                              |
+| mode_gradient                     | bool        | true         | static gradient on mode line               |
+| bar_shimmer                       | bool        | false        | battery particles (classic)                |
+| show_forecast                     | bool        | true         | `⚠~eta` chip                               |
+| show_projection                   | bool        | true         | `→NN%` chip                                |
+| cache_ttl_seconds                 | int         | 300          | deprecated, auto-detected                  |
+| api_mode                          | str         | `"auto"`     | auto \| on \| off                          |
+| warning_threshold                 | float\|null | null→30.0    | comfort band                               |
+| critical_threshold                | float\|null | null→70.0    | comfort band                               |
+| color_ok / color_warn / color_hot | str\|null   | null         | hex overrides                              |
+| color_worktree                    | str\|null   | null         | wt hue override                            |
+| worktree_glyph                    | str         | `"🌳"`       | 1-2 cells                                  |
+| auto_upgrade                      | bool        | true         |                                            |
+| lang                              | str         | `"auto"`     | auto \| zh \| en                           |
 
 (cs/config.py:42-170 for defaults; VALID_KEYS at 318-344; bool parsing `_to_bool`
 accepts 1/true/yes/on/y/t, cs/config.py:173-176.)
@@ -505,17 +505,17 @@ Same design plus a fallback chain: CLI → env (`CODEX_STATEBAR_*` or
 `CLAUDE_STATUSBAR_*`) → codex file → **claude file** → default
 (cxs/config.py:1-11, 44-51, 353-381). Key differences:
 
-| key | type | default | delta vs cs |
-|---|---|---|---|
-| style | str | `"aurora"` | adds ring, capsule, hairline (cxs/styles.py:1223-1229) |
-| narrow_layout | str | **`"stack"`** | cs defaults drop (cxs/config.py:47) |
-| show_mode | bool | **true** | cs false |
-| show_resets | bool | true | **codex-only** (announcements/reset line) |
-| show_party | bool | true | **codex-only** (AgentParty line) |
-| show_per_model | — | absent | not in cxs |
-| lang | str | `"auto"` | validates auto\|zh\|en\|zh-TW\|ja\|ko (cxs/config.py:330-335) |
-| looks_seen | int | 0 | LOOKS_VERSION=2 (cxs/config.py:22) |
-| bar_glyph, density, thresholds, color_*, worktree_glyph, show_weekly, show_cost, show_balance, balance_bar, show_cache_age, show_project_branch, show_ocs, show_cwd, cwd_style, show_todos, show_tools, show_tool_rollup, show_agents, show_ip_risk, show_fp_risk, show_duration, show_lines, show_ahead_behind, show_version, mode_gradient, bar_shimmer, show_forecast, show_projection, cache_ttl_seconds, api_mode, auto_upgrade | | same | cxs/config.py:42-99, VALID_KEYS 205-227 |
+| key                                                                                                                                                                                                                                                                                                                                                                                                                                  | type | default       | delta vs cs                                                   |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---- | ------------- | ------------------------------------------------------------- |
+| style                                                                                                                                                                                                                                                                                                                                                                                                                                | str  | `"aurora"`    | adds ring, capsule, hairline (cxs/styles.py:1223-1229)        |
+| narrow_layout                                                                                                                                                                                                                                                                                                                                                                                                                        | str  | **`"stack"`** | cs defaults drop (cxs/config.py:47)                           |
+| show_mode                                                                                                                                                                                                                                                                                                                                                                                                                            | bool | **true**      | cs false                                                      |
+| show_resets                                                                                                                                                                                                                                                                                                                                                                                                                          | bool | true          | **codex-only** (announcements/reset line)                     |
+| show_party                                                                                                                                                                                                                                                                                                                                                                                                                           | bool | true          | **codex-only** (AgentParty line)                              |
+| show_per_model                                                                                                                                                                                                                                                                                                                                                                                                                       | —    | absent        | not in cxs                                                    |
+| lang                                                                                                                                                                                                                                                                                                                                                                                                                                 | str  | `"auto"`      | validates auto\|zh\|en\|zh-TW\|ja\|ko (cxs/config.py:330-335) |
+| looks_seen                                                                                                                                                                                                                                                                                                                                                                                                                           | int  | 0             | LOOKS_VERSION=2 (cxs/config.py:22)                            |
+| bar_glyph, density, thresholds, color_*, worktree_glyph, show_weekly, show_cost, show_balance, balance_bar, show_cache_age, show_project_branch, show_ocs, show_cwd, cwd_style, show_todos, show_tools, show_tool_rollup, show_agents, show_ip_risk, show_fp_risk, show_duration, show_lines, show_ahead_behind, show_version, mode_gradient, bar_shimmer, show_forecast, show_projection, cache_ttl_seconds, api_mode, auto_upgrade |      | same          | cxs/config.py:42-99, VALID_KEYS 205-227                       |
 
 codex's renderer-level extras: `show_five_hour` (kwarg on renderers,
 cxs/styles.py:126) and the picker's ring look (cxs/picker.py:13-17).
