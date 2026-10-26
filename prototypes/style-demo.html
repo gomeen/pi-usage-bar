@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>pi-usage-bar 样式原型（PROTOTYPE）— wayfinder 票 010</title>
+<style>
+  body { background:#0a0c10; color:#cdd3da; font:14px/1.6 -apple-system,"SF Pro Text",sans-serif; margin:0; padding:32px 40px 80px; }
+  h1 { font-size:20px; color:#e8ecf1; margin:0 0 4px; }
+  h2 { font-size:15px; color:#9aa3ad; margin:36px 0 10px; font-weight:600; }
+  .proto { color:#e2b260; font-size:12px; }
+  .note { color:#78828d; font-size:12.5px; max-width:920px; }
+  .term { background:#101318; border:1px solid #1d232c; border-radius:8px; padding:14px 18px; margin:10px 0 6px; overflow-x:auto; }
+  .line { font:13.5px/1.9 "SF Mono",Menlo,Consolas,"JetBrains Mono",monospace; white-space:pre; }
+  .cap { color:#78828d; font-size:12px; margin:2px 0 18px; }
+  .ctl { display:flex; flex-wrap:wrap; gap:18px; align-items:center; background:#101318; border:1px solid #1d232c; border-radius:8px; padding:10px 16px; margin:14px 0; font-size:13px; position:sticky; top:10px; z-index:9; }
+  .ctl label { color:#9aa3ad; }
+  .ctl button { background:#1a212b; color:#cdd3da; border:1px solid #2a3341; border-radius:5px; padding:3px 10px; font-size:12.5px; cursor:pointer; }
+  .ctl button.on { background:#2b4a33; border-color:#3d6b49; color:#a8e0b2; }
+  .narrow { max-width:63ch; }
+  .checklist { background:#131a15; border:1px solid #24402b; border-radius:8px; padding:14px 20px; max-width:920px; font-size:13px; }
+  .checklist b { color:#a8e0b2; }
+  .checklist li { margin:6px 0; }
+  code { color:#e2b260; font-size:12px; }
+</style>
+</head>
+<body>
+
+<h1>pi-usage-bar 样式原型 <span class="proto">PROTOTYPE · wayfinder #010 · 假数据</span></h1>
+<div class="note">渲染规则逐条来自 <code>research/cs-style-spec.md</code>（cs 源码提取）：12 格 bar、每格按位置渐变、severity 30/70 取色、⏰ 倒计时格式、│ 分隔符、ring 五档字形、classic 电池条。页面底部的「拍板清单」是这张票要你回答的问题。</div>
+
+<div class="ctl">
+  <label>look：
+    <span id="lookBtns"></span>
+  </label>
+  <label>density：
+    <span id="densBtns"></span>
+  </label>
+  <label>s_ok：
+    <span id="okBtns"></span>
+  </label>
+  <label>显示模式：
+    <span id="modeBtns"></span>
+  </label>
+</div>
+
+<h2>A · 四种 look（Codex 数据，regular 密度）</h2>
+<div class="term" id="secA"></div>
+<div class="cap">每格颜色由位置固定（绿→琥珀→红），越满红得越远；空格 edge 灰。百分比按当前严重度着色、粗体。</div>
+
+<h2>B · display.mode 控制（受上方切换影响）</h2>
+<div class="term" id="secB"></div>
+<div class="cap">上：mode=active（只显当前 provider，cs 的行为）。下：mode=all（四家同显 + ↻ 官方重置公告 + Codex credits 余额）。</div>
+
+<h2>C · 特殊状态与中转站</h2>
+<div class="term" id="secC"></div>
+<div class="cap">MiniMax interval 窗标签按时长如实显示（2h）；中转站无配额窗，只显余额油表条（绿色满→黄 ≤25%→红 ≤10%）；错误态与 stale 态。</div>
+
+<h2>D · 窄终端（约 80 列）降级</h2>
+<div class="term narrow" id="secD"></div>
+<div class="cap">mode=all 在窄 footer 的堆叠方案：每家一行，窗口并排。</div>
+
+<h2>E · cs 绿 vs cxs 青绿（s_ok 默认色）</h2>
+<div class="term" id="secE"></div>
+<div class="cap">同一条 bar，左边 s_ok=(78,200,91) cs 绿，右边 (120,200,192) cxs 青绿。</div>
+
+<h2>✅ 拍板清单</h2>
+<div class="checklist">
+<ol>
+  <li><b>默认 look</b>：aurora block（推荐，cs 默认）/ thin / ring / classic？</li>
+  <li><b>s_ok 默认色</b>：cs 绿（推荐，claude-code-usage-bar 同款）还是 cxs 青绿？</li>
+  <li><b>bar 宽度 12 格</b>可以吗？还是想要更窄（8 格省 footer 宽度）？</li>
+  <li><b>四家同显的分隔</b>：一行用 │ 拼到底（B 区下样例）可以吗？</li>
+  <li><b>↻ 官方重置公告</b>：跟在 Codex 段尾（B 区下样例）还是单独一行？</li>
+  <li><b>bal 油表条 6 格 + 金额</b>（C 区）可以吗？还是纯文本 bal $200.00？</li>
+  <li><b>窄终端降级</b>：每家一行堆叠（D 区）可以吗？</li>
+  <li><b>density 默认 regular</b> 可以吗？</li>
+  <li>⏰ 倒计时格式（2h15m / 1h07m / 3d04h）保持 cs 原样可以吗？</li>
+</ol>
+</div>
+
+<script>
+// ---- graphite palette (research/cs-style-spec.md §3.1) ----
+const PAL = {
+  ink:[218,221,225], mute:[120,125,132], edge:[75,80,88],
+  ok:[78,200,91], okTeal:[120,200,192], warn:[232,178,96], hot:[232,116,116],
+  pillInk:[238,235,224], wt:[168,152,226]
+};
+let S = { look:'aurora-block', dens:'regular', okTeal:false, mode:'active' };
+
+const css = c => `color:rgb(${c.map(Math.round).join(',')})`;
+const blend = (a,b,t) => a.map((v,i)=>v+(b[i]-v)*t);
+const span = (c,txt,bold) => `<span style="${css(c)}${bold?';font-weight:700':''}">${txt}</span>`;
+const sep3 = (c) => { switch(S.dens){case 'compact':return '';case 'cozy':return '  ';default:return ' ';} };
+const SEP  = () => sep3()+span(PAL.edge,'│')+sep3();   // aurora family separator
+const RSEP = () => S.dens==='compact'?'  ':S.dens==='cozy'?'    ':'   '; // ring: 2/3/4 spaces
+const ok = () => S.okTeal ? PAL.okTeal : PAL.ok;
+
+const sev = (p,w=30,c=70) => p==null?null : p>=c?PAL.hot : p>=w?PAL.warn : ok();
+
+function cellColor(i,width){
+  const t = width>1 ? i/(width-1) : 0;
+  return t<0.5 ? blend(ok(),PAL.warn,t*2) : blend(PAL.warn,PAL.hot,(t-0.5)*2);
+}
+function bar(p,width,glyph){
+  if(p==null) return span(PAL.edge, glyph.repeat(width));
+  const c = Math.max(0,Math.min(100,p));
+  let filled = Math.trunc(c/100*width + 0.5);
+  if(p>0 && filled===0) filled = 1;
+  let out='';
+  for(let i=0;i<width;i++)
+    out += i<filled ? span(cellColor(i,width),glyph) : span(PAL.edge,glyph);
+  return out;
+}
+function pctText(p,rgb){
+  if(p==null) return span(PAL.mute,'--%');
+  return span(rgb??PAL.ink, String(Math.round(p)).padStart(2)+'%', true);
+}
+// ⏰ formats (spec §2.1): 5h → 2h15m / 37m ; 7d → 3d04h
+const r5 = s => { const m=Math.max(0,Math.floor(s/60)), h=Math.floor(m/60), mm=m%60; return h>0?`${h}h${String(mm).padStart(2,'0')}m`:`${mm}m`; };
+const r7 = s => { const d=Math.floor(s/86400), h=Math.floor((s%86400)/3600); return d>0?`${d}d${String(h).padStart(2,'0')}h`:`${h}h`; };
+
+// ---- aurora window: MUTE label · bar12 · bold pct(sev) · EDGE ⏰ · MUTE reset ----
+function aurWin(label,p,reset,emoji){
+  let out = span(PAL.mute,label)+' '+bar(p,12,S.look==='aurora-thin'?'━':'■')+' '+pctText(p,sev(p))
+          +' '+span(PAL.edge,'⏰')+span(PAL.mute,reset||'--')+(emoji||'');
+  return out;
+}
+// ---- ring window: glyph(sev) · bold ink pct · MUTE label · " · resets X" ----
+function ringGlyph(p){
+  if(p==null) return '○';
+  const c=Math.max(0,Math.min(100,p));
+  let idx=Math.trunc(c/25+0.5); if(c>0&&idx===0)idx=1;
+  return '○◔◑◕●'[idx];
+}
+function ringWin(label,p,reset){
+  let out = (p==null?span(PAL.edge,'○'):span(sev(p),ringGlyph(p)))
+          +' '+pctText(p,PAL.ink)+' '+span(PAL.mute,label);
+  if(reset&&reset!=='--') out += span(PAL.mute,' · resets '+reset);
+  return out;
+}
+// ---- classic battery (spec §1.4): 10 cells, % overlay centered, same-hue fade ----
+function battery(p){
+  const width=10, c=Math.max(0,Math.min(100,p));
+  let filled=Math.trunc(c/100*width+0.5); if(p>0&&filled===0)filled=1;
+  const rgb=sev(p), dark=blend(rgb,[0,0,0],0.35);
+  const text=(p>100?'MAX':Math.round(p)+'%');
+  const pad=width-text.length, left=Math.floor(pad/2);
+  let out='';
+  for(let i=0;i<width;i++){
+    const ch = i>=left && i<left+text.length ? text[i-left] : ' ';
+    const bg = i<filled ? `background:rgb(${blend(rgb,dark,filled>1?i/(filled-1):0).map(Math.round).join(',')})` : `background:rgb(${PAL.edge.join(',')})`;
+    out += `<span style="${bg};${css(PAL.pillInk)}">${ch}</span>`;
+  }
+  return out;
+}
+function clsWin(label,p,reset){
+  return span(sev(p),label)+span(PAL.mute,'[')+battery(p)+span(PAL.mute,']')+span(sev(p),'⏰'+(reset||'--'));
+}
+// ---- provider window dispatch ----
+const win = (label,p,reset) =>
+  S.look==='ring' ? ringWin(label,p,reset) :
+  S.look==='classic' ? clsWin(label,p,reset) : aurWin(label,p,reset);
+
+// ---- data (fake) ----
+const P = {
+  codex:  {name:'Codex',  w1:{label:'5h',p:42,reset:r5(2*3600+15*60)}, w2:{label:'7d',p:83,reset:r7(3*86400+4*3600)}, extra:span(ok(),'$12.50 credits')},
+  claude: {name:'Claude', w1:{label:'5h',p:15,reset:r5(4*3600+2*60)},  w2:{label:'7d',p:61,reset:r7(5*86400+12*3600)}},
+  zai:    {name:'ZAI',    w1:{label:'5h',p:88,reset:r5(37*60)},         w2:{label:'7d',p:34,reset:r7(4*86400+9*3600)}},
+  mm:     {name:'MiniMax',w1:{label:'2h',p:50,reset:r5(1*3600+7*60)},  w2:{label:'7d',p:72,reset:r7(6*86400+3*3600)}},
+};
+const resets = '↻ '+span(PAL.ink,'Official reset · ')+span(PAL.mute,'21h ago');
+function providerSeg(p){ return [win(p.w1.label,p.w1.p,p.w1.reset), win(p.w2.label,p.w2.p,p.w2.reset), p.extra].filter(Boolean); }
+const join = arr => arr.join(S.look==='classic'?span(PAL.mute,' | '):S.look==='ring'?RSEP():SEP());
+
+// ---- bal fuel gauge (ticket 013): remaining% green full → warn ≤25 → hot ≤10 ----
+function bal(remaining,amount){
+  const col = remaining<=10?PAL.hot : remaining<=25?PAL.warn : ok();
+  let g=''; for(let i=0;i<6;i++) g += i < Math.trunc(remaining/100*6+0.5) ? span(col,'█') : span(PAL.edge,'░');
+  return span(PAL.mute,'bal[')+g+span(PAL.mute,'] ')+span(col,amount);
+}
+
+const L = t => `<div class="line">${t}</div>`;
+
+// ---- section A: four looks, codex, fixed regular ----
+function renderA(){
+  const saved={look:S.look,dens:S.dens}; S.dens='regular';
+  let out='';
+  S.look='aurora-block'; out+=L(span(PAL.mute,'aurora block  ')+join(providerSeg(P.codex)));
+  S.look='aurora-thin';  out+=L(span(PAL.mute,'aurora thin   ')+join(providerSeg(P.codex)));
+  S.look='ring';         out+=L(span(PAL.mute,'ring          ')+join(providerSeg(P.codex)));
+  S.look='classic';      out+=L(span(PAL.mute,'classic       ')+join(providerSeg(P.codex)));
+  Object.assign(S,saved);
+  document.getElementById('secA').innerHTML=out;
+}
+// ---- section B: active vs all ----
+function renderB(){
+  let out='';
+  if(S.mode==='active'){
+    out+=L(span(PAL.mute,'// mode=active — 当前模型是 Codex 时') );
+    out+=L(span(PAL.dim||PAL.ink,'')+join(providerSeg(P.codex))+' '+resets);
+  }else{
+    out+=L(span(PAL.mute,'// mode=all — 四家同显（↻ 只跟 Codex）'));
+    const segs=[P.codex,P.claude,P.zai,P.mm].map(p=>span(PAL.ink,p.name)+' '+join(providerSeg(p)));
+    out+=L(segs.join(SEP()));
+    out+=L(resets);
+  }
+  document.getElementById('secB').innerHTML=out;
+}
+// ---- section C: special states ----
+function renderC(){
+  let out='';
+  out+=L(span(PAL.mute,'// MiniMax interval 窗：标签按时长如实（2h），非 5h'));
+  out+=L(span(PAL.ink,'MiniMax')+' '+join(providerSeg(P.mm)));
+  out+=L('');
+  out+=L(span(PAL.mute,'// 中转站（relay）：无配额窗，只有余额油表条 + 上次有效值 ⟳ 标记'));
+  out+=L(span(PAL.ink,'4sapi')+' '+bal(29,'$200.00'));
+  out+=L(span(PAL.ink,'h-self')+' '+bal(64,'¥352.00')+' '+span(PAL.mute,'⟳'));
+  out+=L('');
+  out+=L(span(PAL.mute,'// 错误态：某家查询失败，只影响该家'));
+  out+=L(span(PAL.ink,'ZAI')+' '+span(PAL.warn,'usage unavailable (429)'));
+  out+=L('');
+  out+=L(span(PAL.mute,'// stale：数据过期'));
+  out+=L(span(PAL.warn,'⟳ 5h/7d stale·refresh'));
+  document.getElementById('secC').innerHTML=out;
+}
+// ---- section D: narrow stacking ----
+function renderD(){
+  let out=L(span(PAL.mute,'// mode=all @ 80 列：每家一行堆叠'));
+  for(const p of [P.codex,P.claude,P.zai,P.mm])
+    out+=L(span(PAL.ink,p.name)+' '+join(providerSeg(p)));
+  out+=L(resets);
+  document.getElementById('secD').innerHTML=out;
+}
+// ---- section E: green vs teal ----
+function renderE(){
+  const saved=S.okTeal;
+  let a,b;
+  S.okTeal=false; a=join(providerSeg(P.zai));
+  S.okTeal=true;  b=join(providerSeg(P.zai));
+  S.okTeal=saved;
+  document.getElementById('secE').innerHTML =
+    L(span(PAL.mute,'cs 绿 (78,200,91)   ')+a)+L(span(PAL.mute,'cxs 青绿 (120,200,192) ')+b);
+}
+function renderAll(){ renderA(); renderB(); renderC(); renderD(); renderE(); }
+
+// ---- controls ----
+function mkBtns(elId, items, get, set){
+  const el=document.getElementById(elId);
+  el.innerHTML='';
+  items.forEach(([label,val])=>{
+    const b=document.createElement('button');
+    b.textContent=label; if(get()===val)b.classList.add('on');
+    b.onclick=()=>{ set(val); mkBtns(elId,items,get,set); renderAll(); };
+    el.appendChild(b); el.appendChild(document.createTextNode(' '));
+  });
+}
+mkBtns('lookBtns',[['aurora block','aurora-block'],['aurora thin','aurora-thin'],['ring','ring'],['classic','classic']],()=>S.look,v=>S.look=v);
+mkBtns('densBtns',[['compact','compact'],['regular','regular'],['cozy','cozy']],()=>S.dens,v=>S.dens=v);
+mkBtns('okBtns',[['cs 绿',false],['cxs 青绿',true]],()=>S.okTeal,v=>S.okTeal=v);
+mkBtns('modeBtns',[['active（当前）','active'],['all（四家）','all']],()=>S.mode,v=>S.mode=v);
+renderAll();
+</script>
+</body>
+</html>
