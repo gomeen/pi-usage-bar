@@ -34,6 +34,7 @@ status: open
 - [Official reset announcements in scope](012-official-resets-in-scope.md): codex-resets.com 追踪 OpenAI 员工 X 官宣的 Codex 手动重置；ETag+TTL 5min+inflight 锁方案照携；纳入 v1，`show_resets` 默认开，仅 Codex 用户拉取。
 - [Post-research display and relay balance decisions](013-post-research-display-relay-decisions.md): 各家附加数据取舍（Codex credits 显示/extra_usage 入雾/MiniMax 只显百分比）；窗口标签按时长动态生成；--usage flag 要；中转站余额 v1 纳入、自动探测（404 一次即缓存）、油表条显示，实测 4sapi 验证通过。
 - [Style prototype with fake data](010-style-prototype.md): 默认 aurora block + cs 绿 + bar12/regular；↻ 跟 Codex 段尾、⏰ cs 原样格式；bal 只显剩余金额（修正 013 的油表条方案）；显示策略=配置优先/未配置显全/超宽换行（需 setFooter 多行，截断退化堆叠）；原型 prototypes/style-demo.html。
+- [Toolchain and scaffold lock](011-toolchain-scaffold.md): 一个深模块（UsageSnapshot 管线）+ 三条缝（数据/渲染/pi 适配）；vitest + 零运行时依赖 + biome + TS 源码直发；四层测试（fixture/golden/集成/冒烟）；CI=typecheck→test→pack 验证。
 
 ## Not yet specified
 
