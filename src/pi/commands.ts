@@ -6,7 +6,7 @@
 
 import {
 	DynamicBorder,
-	getSettingsListTheme,
+	type getSettingsListTheme,
 } from "@earendil-works/pi-coding-agent";
 import { type SettingItem, SettingsList } from "@earendil-works/pi-tui";
 import { configFilePath, loadConfig, sparseSave } from "../config.js";
@@ -351,7 +351,18 @@ export async function runConfigCommand(
 	const cfg = loadConfig();
 
 	await ui.custom<null>((tui, theme, keybindings, done) => {
-		const listTheme = getSettingsListTheme();
+		// Build the list theme from the factory-passed theme object — the
+		// global theme inside getSettingsListTheme() may be undefined when
+		// this extension loads via jiti (DynamicBorder carries the same note).
+		const th = theme as { fg(token: string, text: string): string };
+		const listTheme: SettingsListTheme = {
+			label: (text, selected) => (selected ? th.fg("accent", text) : text),
+			value: (text, selected) =>
+				selected ? th.fg("accent", text) : th.fg("muted", text),
+			description: (text) => th.fg("dim", text),
+			cursor: th.fg("accent", "→ "),
+			hint: (text) => th.fg("dim", text),
+		};
 		const requestRender = () =>
 			(tui as { requestRender(): void }).requestRender();
 
@@ -422,7 +433,7 @@ function makeStylePickerItem(
 	keybindings: { matches(data: string, action: string): boolean },
 	requestRender: () => void,
 	apply: (id: string, value: string) => void,
-	listTheme: ReturnType<typeof getSettingsListTheme>,
+	listTheme: SettingsListTheme,
 ): SettingItem {
 	const palette = applyColorOverrides(
 		GRAPHITE,
