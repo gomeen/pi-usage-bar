@@ -130,7 +130,12 @@ export interface UsageBarConfig {
 	color_hot: string;
 	warning_threshold: number;
 	critical_threshold: number;
-	display: { mode: "active" | "all"; providers: PlanKind[] };
+	display: {
+		mode: "active" | "all";
+		providers: PlanKind[];
+		/** In all-mode, render non-active plans as one compact summary line. */
+		compact_others: boolean;
+	};
 	/** Manual provider-id mapping: plan name, or relay object. Wins over auto-detection. */
 	providerMap: Record<string, string | { type: "relay" }>;
 	refresh_minutes: number;
@@ -152,7 +157,7 @@ export const DEFAULT_CONFIG: UsageBarConfig = {
 	color_hot: "",
 	warning_threshold: 30,
 	critical_threshold: 70,
-	display: { mode: "all", providers: [] },
+	display: { mode: "all", providers: [], compact_others: true },
 	providerMap: {},
 	refresh_minutes: 2,
 	show_resets: true,

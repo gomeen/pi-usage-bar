@@ -638,3 +638,32 @@ it("hides reset countdowns when show_reset_countdown is false (default)", () => 
 	expect(strip(lines[0] ?? "")).not.toContain("⏰");
 	expect(strip(lines[0] ?? "")).not.toContain("resets ");
 });
+
+it("compact mode: active full, others as one summary line", () => {
+	const codex = snap();
+	codex.provider = "openai";
+	codex.windows.push(win("5h", 17, NOW + TWO_H_15M_MS, 18000));
+	codex.windows.push(win("7d", 3, NOW + THREE_D_04H_MS, 604800));
+	const zai: UsageSnapshot = {
+		provider: "zai-coding-cn",
+		plan: "zai",
+		windows: [win("5h", 62, NOW + TWO_H_15M_MS, 18000)],
+		status: "ok",
+		fetchedAt: NOW,
+	};
+	const lines = renderStatus(
+		[codex, zai],
+		cfg(),
+		120,
+		GRAPHITE,
+		NOW,
+		"zai-coding-cn",
+	);
+	expect(lines).toHaveLength(2);
+	const l0 = strip(lines[0] ?? "");
+	const l1 = strip(lines[1] ?? "");
+	// active (zai) renders full with bars; codex collapses to name + percents
+	expect(l0).toContain("5h");
+	expect(l0).toContain("■");
+	expect(l1).toBe("Codex 17%·3%");
+});

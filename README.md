@@ -47,6 +47,7 @@ Everything lives in `~/.pi/agent/usage-bar.json` (sparse — only non-default ke
 | `warning_threshold` / `critical_threshold` | `30` / `70` | percent |
 | `display.mode` | `"all"` | `active` (current model's plan) \| `all` (every configured plan) |
 | `display.providers` | `[]` | plan filter for `all` mode |
+| `display.compact_others` | `true` | non-active plans collapse to one summary line |
 | `providerMap` | `{}` | custom id → plan, e.g. `{"cc-switch-zhipu-glm": "zai-cn"}` or `{"my-relay": {"type": "relay"}}` |
 | `refresh_minutes` | `2` | poll interval |
 | `show_resets` | `true` | codex-resets.com announcements |

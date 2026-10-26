@@ -224,6 +224,44 @@ function hasContent(snap: UsageSnapshot, config: UsageBarConfig): boolean {
 	return snap.announcement !== undefined && config.show_resets;
 }
 
+/** Compact one-line item for a non-active plan: `Name 17%·3%` / `name $200`. */
+function compactItem(
+	snap: UsageSnapshot,
+	config: UsageBarConfig,
+	palette: Palette,
+	now: number,
+): string | null {
+	if (snap.status === "error") {
+		return null;
+	}
+	const bits: string[] = [];
+	for (const w of snap.windows) {
+		if (w.percent === null) continue;
+		const sev = severityColor(
+			palette,
+			w.percent,
+			config.warning_threshold,
+			config.critical_threshold,
+		);
+		bits.push(`${fg(sev ?? palette.ink)}${Math.round(w.percent)}%${RESET}`);
+	}
+	if (snap.balance !== undefined) {
+		bits.push(
+			`${fg(palette.ok)}${config.currency}${snap.balance.amount.toFixed(2)}${RESET}`,
+		);
+	}
+	if (bits.length === 0) {
+		return null;
+	}
+	let item = `${fg(palette.mute)}${displayName(snap)}${RESET} ${bits.join(
+		`${fg(palette.mute)}·${RESET}`,
+	)}`;
+	if (now - snap.fetchedAt > config.refresh_minutes * 3 * 60_000) {
+		item += ` ${fg(palette.mute)}⟳${RESET}`;
+	}
+	return item;
+}
+
 function renderSegment(
 	snap: UsageSnapshot,
 	config: UsageBarConfig,
@@ -288,6 +326,7 @@ export function renderStatus(
 	width: number,
 	palette: Palette,
 	now: number,
+	activeProvider?: string,
 ): string[] {
 	if (snapshots.length === 0) {
 		return [];
@@ -297,6 +336,35 @@ export function renderStatus(
 		return [];
 	}
 	const multi = visible.length > 1;
+
+	// Compact mode: the active provider renders full, everyone else collapses
+	// onto one summary line ({name} {p}%·{p}% / {name} $bal).
+	if (
+		multi &&
+		config.display.compact_others &&
+		activeProvider !== undefined &&
+		activeProvider !== ""
+	) {
+		const active =
+			visible.find((s) => s.provider === activeProvider) ?? visible[0];
+		if (!active) {
+			return [];
+		}
+		const rest = visible.filter((s) => s !== active);
+		const activeSeg = renderSegment(active, config, palette, now, false, 0);
+		const items = rest.map((s) => compactItem(s, config, palette, now));
+		const lines: string[] = [];
+		if (activeSeg !== null) {
+			lines.push(activeSeg);
+		}
+		const summary = items.filter((i) => i !== null).join("   ");
+		if (summary !== "") {
+			lines.push(summary);
+		}
+		if (lines.length > 0) {
+			return lines;
+		}
+	}
 	const nameWidth = multi
 		? Math.max(...visible.map((s) => displayName(s).length))
 		: 0;

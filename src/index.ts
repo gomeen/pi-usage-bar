@@ -226,7 +226,14 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 			const build = (width: number): string[] =>
 				state.snapshots.length === 0
 					? []
-					: renderStatus(state.snapshots, state.config, width, pal, Date.now());
+					: renderStatus(
+							state.snapshots,
+							state.config,
+							width,
+							pal,
+							Date.now(),
+							state.ctx?.model?.provider,
+						);
 			publishDisplay(state.ctx.ui as DisplayUIContext, build);
 		});
 	}

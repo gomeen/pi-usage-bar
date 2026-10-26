@@ -47,6 +47,7 @@ pi install npm:@gomeen/pi-usage-bar
 | `warning_threshold` / `critical_threshold` | `30` / `70` | 百分比 |
 | `display.mode` | `"all"` | `active`（当前套餐）\| `all`（全部已配置套餐） |
 | `display.providers` | `[]` | `all` 模式的套餐过滤 |
+| `display.compact_others` | `true` | 非当前套餐压缩为一行简报 |
 | `providerMap` | `{}` | 自定义 id → 套餐，如 `{"cc-switch-zhipu-glm": "zai-cn"}` 或 `{"my-relay": {"type": "relay"}}` |
 | `refresh_minutes` | `2` | 轮询间隔（分钟） |
 | `show_resets` | `true` | 官方重置公告 |

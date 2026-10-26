@@ -177,6 +177,10 @@ export function validateConfig(cfg: UsageBarConfig): UsageBarConfig {
 		display: {
 			mode: enumOr(display.mode, DISPLAY_MODES, DEFAULT_CONFIG.display.mode),
 			providers,
+			compact_others:
+				typeof display.compact_others === "boolean"
+					? display.compact_others
+					: DEFAULT_CONFIG.display.compact_others,
 		},
 		providerMap: normalizeProviderMap(src.providerMap),
 		refresh_minutes: Math.max(

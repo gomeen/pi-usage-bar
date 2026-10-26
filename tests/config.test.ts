@@ -59,7 +59,11 @@ describe("loadConfig", () => {
 
 	it("deep-merges display fields onto defaults", () => {
 		const cfg = loadJson('{"display": {"providers": ["codex"]}}');
-		expect(cfg.display).toEqual({ mode: "all", providers: ["codex"] });
+		expect(cfg.display).toEqual({
+			mode: "all",
+			providers: ["codex"],
+			compact_others: true,
+		});
 	});
 
 	it("keeps file values for known keys and drops unknown keys", () => {
@@ -167,10 +171,10 @@ describe("sparseSave", () => {
 	it("writes the whole nested display object when it differs", () => {
 		const cfg: UsageBarConfig = {
 			...DEFAULT_CONFIG,
-			display: { mode: "active", providers: [] },
+			display: { mode: "active", providers: [], compact_others: true },
 		};
 		expect(saveToString(cfg).body).toBe(
-			'{\n  "display": {\n    "mode": "active",\n    "providers": []\n  }\n}\n',
+			'{\n  "display": {\n    "mode": "active",\n    "providers": [],\n    "compact_others": true\n  }\n}\n',
 		);
 	});
 
@@ -188,7 +192,7 @@ describe("sparseSave", () => {
 			style: "classic",
 			refresh_minutes: 10,
 			color_hot: "#ff0000",
-			display: { mode: "all", providers: ["relay"] },
+			display: { mode: "all", providers: ["relay"], compact_others: true },
 			providerMap: { "my-relay": { type: "relay" } },
 		};
 		const { body } = saveToString(cfg);
