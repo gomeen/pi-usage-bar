@@ -16,7 +16,7 @@ Subscription plan usage bars for the [Pi](https://github.com/earendil-works/pi) 
 
 | Plan | Pi provider ids | Auth |
 |---|---|---|
-| OpenAI Codex (ChatGPT) | `openai`, `openai-codex` | ChatGPT subscription OAuth |
+| OpenAI Codex (ChatGPT) | `openai`, `openai-codex` | ChatGPT subscription OAuth — **usage queries require the `openai-codex` ("OpenAI Codex") login**: the `openai` provider's ChatGPT direct-use token cannot access the backend-api usage endpoint. Run `/login` → OpenAI Codex once and both providers share the subscription. |
 | Anthropic Claude | `anthropic` | Claude Pro/Max OAuth |
 | ZAI Coding Plan (Global/China) | `zai`, `zai-coding-cn` | API key |
 | MiniMax Token Plan (Global/China) | `minimax`, `minimax-cn` | API key |

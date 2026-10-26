@@ -16,7 +16,7 @@
 
 | 套餐 | Pi provider id | 认证 |
 |---|---|---|
-| OpenAI Codex (ChatGPT) | `openai`、`openai-codex` | ChatGPT 订阅 OAuth |
+| OpenAI Codex (ChatGPT) | `openai`、`openai-codex` | ChatGPT 订阅 OAuth —— **用量查询需要 `openai-codex`（"OpenAI Codex"）登录**：`openai` 的 ChatGPT 直用令牌无法访问 backend-api 用量端点。`/login` → OpenAI Codex 登一次即可。 |
 | Anthropic Claude | `anthropic` | Claude Pro/Max OAuth |
 | ZAI Coding Plan（国际/国内） | `zai`、`zai-coding-cn` | API key |
 | MiniMax Token Plan（国际/国内） | `minimax`、`minimax-cn` | API key |

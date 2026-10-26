@@ -35,7 +35,7 @@ The domain model `UsageSnapshot` (src/types.ts) flows through everything. Three 
 
 | Area                                | Spec source                                                                                     |
 | ----------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Codex API                           | `research/codex-usage-api.md`                                                                   |
+| Codex API                           | `research/codex-usage-api.md` — usage credential must resolve from pi's `openai-codex` provider (backend-api audience); the `openai` ChatGPT direct-use token gets 401 `no_matching_rule` (verified live) |
 | Claude API                          | `research/claude-usage-api.md`                                                                  |
 | ZAI API                             | `research/zai-usage-api.md`                                                                     |
 | MiniMax API                         | `research/minimax-usage-api.md`                                                                 |

@@ -10,7 +10,11 @@ import { FileCache } from "./cache.js";
 import { loadConfig, resolveEndpointOverrides } from "./config.js";
 import { detectRoute, PLAN_HOSTS, planDisplayLabel } from "./detect.js";
 import { runConfigCommand, runUsageCommand } from "./pi/commands.js";
-import { type RegistryLike, resolveCredential } from "./pi/credentials.js";
+import {
+	type RegistryLike,
+	resolveCredential,
+	resolveCredentialAny,
+} from "./pi/credentials.js";
 import {
 	clearFooter,
 	type FooterUIContext,
@@ -155,12 +159,23 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 					? await allTargets(ctx)
 					: activeTargets(ctx);
 			const resolved = await Promise.all(
-				targets.map(async (t) => ({
-					...t,
-					credential:
-						t.credential ??
-						(await resolveCredential(registryOf(ctx), t.provider)),
-				})),
+				targets.map(async (t) => {
+					if (t.credential) return t;
+					if (t.plan === "codex") {
+						// Codex usage needs the backend-api audience token, which pi
+						// stores under the openai-codex provider. The `openai`
+						// ChatGPT direct-use token (aud api.openai.com/v1) is
+						// rejected by wham/usage — never fall back to it.
+						const r = await resolveCredentialAny(registryOf(ctx), [
+							"openai-codex",
+						]);
+						return { ...t, credential: r.credential };
+					}
+					return {
+						...t,
+						credential: await resolveCredential(registryOf(ctx), t.provider),
+					};
+				}),
 			);
 			const showable = resolved.filter(
 				(t) => t.credential !== null || t.plan === "relay",
@@ -283,14 +298,28 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 			return;
 		}
 		const resolved = await Promise.all(
-			targets.map(async (t) => ({
-				...t,
-				credential: await resolveCredential(registryOf(ctx), t.provider),
-			})),
+			targets.map(async (t) => {
+				if (t.plan === "codex") {
+					// Same rule as refresh(): codex credentials come from the
+					// openai-codex provider only (backend-api audience).
+					const r = await resolveCredentialAny(registryOf(ctx), [
+						"openai-codex",
+					]);
+					return { ...t, credential: r.credential };
+				}
+				return {
+					...t,
+					credential: await resolveCredential(registryOf(ctx), t.provider),
+				};
+			}),
 		);
 		const ready = resolved.filter((t) => t.credential !== null);
 		if (ready.length === 0) {
-			console.log(JSON.stringify({ status: "unconfigured" }));
+			const hint =
+				targets[0]?.plan === "codex"
+					? "run /login and choose OpenAI Codex (ChatGPT Plus/Pro) — the openai ChatGPT token cannot query backend-api usage"
+					: undefined;
+			console.log(JSON.stringify({ status: "unconfigured", hint }));
 			await ctx.shutdown();
 			return;
 		}
