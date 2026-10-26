@@ -190,7 +190,20 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 					})
 				: [];
 			if (controller.signal.aborted) return;
-			state.snapshots = snapshots;
+			// One snapshot per plan: all-mode candidates can overlap (the
+			// `openai` and `openai-codex` providers both map to codex). The
+			// active provider's snapshot wins so the full first line always
+			// describes the plan the current model actually spends.
+			const activeProviderId = ctx.model?.provider ?? "";
+			const byPlan = new Map<PlanKind, UsageSnapshot>();
+			for (const snap of snapshots) {
+				if (snap.provider === activeProviderId) {
+					byPlan.set(snap.plan, snap);
+					continue;
+				}
+				if (!byPlan.has(snap.plan)) byPlan.set(snap.plan, snap);
+			}
+			state.snapshots = [...byPlan.values()];
 			render();
 		} finally {
 			if (state.inflight === controller) state.inflight = undefined;
@@ -262,7 +275,12 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 	});
 
 	pi.on("model_select", () => {
-		if (state.ctx?.mode === "tui") void refresh();
+		if (state.ctx?.mode !== "tui") return;
+		// A poll may be in flight for the previous provider; abort it so the
+		// footer reflects the new active plan immediately.
+		state.inflight?.abort();
+		state.inflight = undefined;
+		void refresh();
 	});
 
 	pi.on("session_shutdown", () => {

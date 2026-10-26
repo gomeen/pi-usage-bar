@@ -266,9 +266,7 @@ function compactItem(
 	if (bits.length === 0) {
 		return null;
 	}
-	let item = `${fg(palette.mute)}${displayName(snap)}${RESET} ${bits.join(
-		`${fg(palette.mute)}/${RESET}`,
-	)}`;
+	let item = `${fg(palette.mute)}${displayName(snap)}${RESET} ${bits.join(" ")}`;
 	if (now - snap.fetchedAt > config.refresh_minutes * 3 * 60_000) {
 		item += ` ${fg(palette.mute)}⟳${RESET}`;
 	}
