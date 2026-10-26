@@ -1,81 +1,43 @@
 /**
- * Footer adapter: single-line status via setStatus; multi-line (wrapped)
- * rendering via setFooter, preserving other extensions' status lines.
- * Decision (issue 010): wrap, never truncate silently.
+ * Display adapter (issue: never hijack pi's footer).
+ * - Single line → setStatus: shares the standard footer next to pi's own info.
+ * - Multiple lines → setWidget belowEditor: a persistent block under the
+ *   editor, width-aware, leaving the built-in footer (model info, other
+ *   extensions) fully intact. setFooter is deliberately never used.
  */
 import type { Component } from "@earendil-works/pi-tui";
 
 export const STATUS_KEY = "pi-usage-bar";
 
-/** Structural subset of the pi UI context the footer needs. */
-export interface FooterUIContext {
+export interface DisplayUIContext {
 	setStatus(key: string, text: string | undefined): void;
-	setFooter(
-		factory:
-			| ((
-					tui: unknown,
-					theme: unknown,
-					footerData: {
-						getExtensionStatuses(): ReadonlyMap<string, string>;
-					},
-			  ) => Component & { dispose?(): void })
-			| undefined,
+	setWidget(
+		key: string,
+		content:
+			| string[]
+			| undefined
+			| ((tui: unknown, theme: unknown) => Component & { dispose?(): void }),
+		options?: { placement?: "aboveEditor" | "belowEditor" },
 	): void;
-	hasCustomFooter?: boolean;
 }
 
 class BuilderComponent implements Component {
 	private cache = new Map<number, string[]>();
-	constructor(
-		private build: (width: number) => string[],
-		private tail: string[],
-	) {}
+	constructor(private build: (width: number) => string[]) {}
 	render(width: number): string[] {
 		let lines = this.cache.get(width);
 		if (!lines) {
-			lines = this.build(width).filter((l) => l.length > 0);
+			lines = this.build(width).filter((l) => l.trim().length > 0);
 			this.cache.set(width, lines);
 		}
-		return [...lines, ...this.tail];
+		return lines;
 	}
 	invalidate(): void {
 		this.cache.clear();
 	}
 }
 
-let footerInstalled = false;
-
-/**
- * Publish rendered lines. One line → plain setStatus (no layout takeover).
- * Multiple lines → install a custom footer that stacks our lines first and
- * keeps every other extension's status lines below ours.
- */
-export function publishFooter(
-	ctx: FooterUIContext,
-	build: (width: number) => string[],
-): void {
-	const initial = build(currentWidth());
-	const list = initial.filter((l) => l.length > 0);
-	if (list.length <= 1) {
-		if (footerInstalled) {
-			ctx.setFooter(undefined);
-			footerInstalled = false;
-		}
-		ctx.setStatus(STATUS_KEY, list[0]);
-		return;
-	}
-
-	ctx.setStatus(STATUS_KEY, undefined);
-	ctx.setFooter((_tui, _theme, footerData) => {
-		const others: string[] = [];
-		const statuses = footerData.getExtensionStatuses();
-		for (const [key, text] of statuses) {
-			if (key !== STATUS_KEY && text) others.push(text);
-		}
-		return new BuilderComponent(build, others);
-	});
-	footerInstalled = true;
-}
+let widgetInstalled = false;
 
 function currentWidth(): number {
 	return process.stdout.columns && process.stdout.columns > 0
@@ -83,11 +45,36 @@ function currentWidth(): number {
 		: 120;
 }
 
-/** Clear everything we own (idempotent — also used from session_shutdown). */
-export function clearFooter(ctx: FooterUIContext): void {
+/**
+ * Publish rendered lines. One line goes to the shared footer status; more
+ * than one becomes a belowEditor widget so pi's default footer survives.
+ */
+export function publishDisplay(
+	ctx: DisplayUIContext,
+	build: (width: number) => string[],
+): void {
+	const initial = build(currentWidth()).filter((l) => l.trim().length > 0);
+	if (initial.length <= 1) {
+		if (widgetInstalled) {
+			ctx.setWidget(STATUS_KEY, undefined);
+			widgetInstalled = false;
+		}
+		ctx.setStatus(STATUS_KEY, initial[0]);
+		return;
+	}
+
 	ctx.setStatus(STATUS_KEY, undefined);
-	if (footerInstalled) {
-		ctx.setFooter(undefined);
-		footerInstalled = false;
+	ctx.setWidget(STATUS_KEY, (_tui, _theme) => new BuilderComponent(build), {
+		placement: "belowEditor",
+	});
+	widgetInstalled = true;
+}
+
+/** Clear everything we own (idempotent — also used from session_shutdown). */
+export function clearDisplay(ctx: DisplayUIContext): void {
+	ctx.setStatus(STATUS_KEY, undefined);
+	if (widgetInstalled) {
+		ctx.setWidget(STATUS_KEY, undefined);
+		widgetInstalled = false;
 	}
 }

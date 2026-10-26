@@ -230,6 +230,7 @@ function renderSegment(
 	palette: Palette,
 	now: number,
 	multi: boolean,
+	nameWidth: number,
 ): string | null {
 	const parts: string[] = [];
 	if (snap.status === "error") {
@@ -263,7 +264,9 @@ function renderSegment(
 		seg += ` ${fg(palette.mute)}⟳${RESET}`;
 	}
 	if (multi || snap.status === "error") {
-		seg = `${fg(palette.ink)}${displayName(snap)}${RESET} ${seg}`;
+		// Equal-width names keep the bars vertically aligned across lines.
+		const name = displayName(snap).padEnd(nameWidth, " ");
+		seg = `${fg(palette.ink)}${name}${RESET} ${seg}`;
 	}
 	if (age > DIM_AFTER_MS) {
 		seg = FAINT + seg + UNFAINT;
@@ -294,9 +297,12 @@ export function renderStatus(
 		return [];
 	}
 	const multi = visible.length > 1;
+	const nameWidth = multi
+		? Math.max(...visible.map((s) => displayName(s).length))
+		: 0;
 	const segments: string[] = [];
 	for (const snap of visible) {
-		const seg = renderSegment(snap, config, palette, now, multi);
+		const seg = renderSegment(snap, config, palette, now, multi, nameWidth);
 		if (seg !== null) {
 			segments.push(seg);
 		}

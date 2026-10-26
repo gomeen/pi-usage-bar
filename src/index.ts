@@ -16,9 +16,9 @@ import {
 	resolveCredentialAny,
 } from "./pi/credentials.js";
 import {
-	clearFooter,
-	type FooterUIContext,
-	publishFooter,
+	clearDisplay,
+	type DisplayUIContext,
+	publishDisplay,
 	STATUS_KEY,
 } from "./pi/footer.js";
 import { paletteFromPiTheme } from "./pi/theme.js";
@@ -227,7 +227,7 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 				state.snapshots.length === 0
 					? []
 					: renderStatus(state.snapshots, state.config, width, pal, Date.now());
-			publishFooter(state.ctx.ui as FooterUIContext, build);
+			publishDisplay(state.ctx.ui as DisplayUIContext, build);
 		});
 	}
 
@@ -266,7 +266,7 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 		state.inflight?.abort();
 		state.inflight = undefined;
 		if (state.ctx?.mode === "tui") {
-			clearFooter(state.ctx.ui as FooterUIContext);
+			clearDisplay(state.ctx.ui as DisplayUIContext);
 		}
 		state.ctx = undefined;
 	});

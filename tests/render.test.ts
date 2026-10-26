@@ -526,7 +526,7 @@ describe("wrapping and density", () => {
 		const lines = renderStatus([codex, claudeSnap()], cfg(), 80, GRAPHITE, NOW);
 		expect(lines).toHaveLength(2);
 		expect(strip(lines[0] ?? "")).toBe(
-			"Codex 5h ■■■■■■■■■■■■ 42% ⏰2h15m │ 7d ■■■■■■■■■■■■ 83% ⏰3d04h",
+			"Codex  5h ■■■■■■■■■■■■ 42% ⏰2h15m │ 7d ■■■■■■■■■■■■ 83% ⏰3d04h",
 		);
 		expect(strip(lines[1] ?? "")).toBe(
 			"Claude 5h ■■■■■■■■■■■■ 15% ⏰4h02m │ 7d ■■■■■■■■■■■■ 61% ⏰5d12h",
