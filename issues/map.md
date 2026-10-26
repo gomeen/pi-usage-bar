@@ -35,13 +35,12 @@ status: open
 - [Post-research display and relay balance decisions](013-post-research-display-relay-decisions.md): 各家附加数据取舍（Codex credits 显示/extra_usage 入雾/MiniMax 只显百分比）；窗口标签按时长动态生成；--usage flag 要；中转站余额 v1 纳入、自动探测（404 一次即缓存）、油表条显示，实测 4sapi 验证通过。
 - [Style prototype with fake data](010-style-prototype.md): 默认 aurora block + cs 绿 + bar12/regular；↻ 跟 Codex 段尾、⏰ cs 原样格式；bal 只显剩余金额（修正 013 的油表条方案）；显示策略=配置优先/未配置显全/超宽换行（需 setFooter 多行，截断退化堆叠）；原型 prototypes/style-demo.html。
 - [Toolchain and scaffold lock](011-toolchain-scaffold.md): 一个深模块（UsageSnapshot 管线）+ 三条缝（数据/渲染/pi 适配）；vitest + 零运行时依赖 + biome + TS 源码直发；四层测试（fixture/golden/集成/冒烟）；CI=typecheck→test→pack 验证。
+- [Provider detection and providerMap spec](008-provider-detection-mapping-spec.md): Codex 凭据走新 ID `openai`（实测 oauth 类型佐证）；自动映射表+手动 providerMap 优先+自定义 ID 自动探中转站；网关场景显示实际扣钱账户；凭据判别优先文档化信号、歧义双试隔离 compat。
+- [Config schema and slash command surface](009-config-schema-slash-commands.md): 单一全局 `~/.pi/agent/usage-bar.json` 稀疏写入；16 键全量键表定稿；`/usage-bar` 纯对话框式；`--usage` 一行 JSON 永不含凭据。
 
 ## Not yet specified
 
-- 发布流程细节：npm 包名查重与 scope、pi 社区（packages 生态）收录途径、发版 CI——待 toolchain 票（011）落定后毕业为专门的发布票。
-- 稳健性规格：各家 429/错误形状已在 research/*.md，集中拆一张稳健性规格票（退避、缓存、stale 展示）在实现前。
 - Claude `extra_usage`（按量溢出额度）字段语义——社区未完全确认，确认后再决定显示。
-- MiniMax reset 兜底：remains_time 单位启发式与完全无 reset 字段时的显示策略——并入稳健性票。
 
 ## Out of scope
 
