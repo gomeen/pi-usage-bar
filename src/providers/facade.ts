@@ -44,6 +44,21 @@ export interface FacadeOpts extends FetchOpts {
 
 const adapterCache = new Map<string, ProviderAdapter>();
 
+/** Issue 014: keep the last good snapshot per plan across failed polls. */
+const lastGood = new Map<PlanKind, UsageSnapshot>();
+
+/**
+ * Issue 014: escalating backoff per plan on 429s — 1 → 5 → 15 min.
+ * Pure decision helper so the policy stays testable.
+ */
+export function nextBackoffMs(consecutive429s: number): number {
+	const minutes: readonly number[] = [1, 5, 15];
+	const idx = Math.min(Math.max(consecutive429s - 1, 0), minutes.length - 1);
+	return (minutes[idx] ?? 1) * 60_000;
+}
+
+const backoff = new Map<PlanKind, { until: number; hits: number }>();
+
 function adapterFor(plan: PlanKind, provider: string): ProviderAdapter | null {
 	switch (plan) {
 		case "codex": {
@@ -111,6 +126,14 @@ export async function fetchAllUsages(
 			}
 			return errorSnapshot(target, opts.now, "unconfigured");
 		}
+		// Backoff window active: serve last-good instead of hammering.
+		const bo = backoff.get(target.plan);
+		if (bo && opts.now < bo.until) {
+			return (
+				lastGood.get(target.plan) ??
+				errorSnapshot(target, opts.now, "cooling down")
+			);
+		}
 		try {
 			if (target.plan === "relay") {
 				if (!target.baseUrl) {
@@ -131,11 +154,37 @@ export async function fetchAllUsages(
 
 	const snapshots = await Promise.all(jobs);
 
+	// Record outcomes: success clears backoff and refreshes last-good; a 429
+	// escalates it. Last-good snapshots are served in place of hard errors so
+	// a transient failure never makes a plan vanish from the bar.
+	for (const snap of snapshots) {
+		if (snap.status === "ok") {
+			lastGood.set(snap.plan, snap);
+			backoff.delete(snap.plan);
+		} else if (snap.error?.includes("429")) {
+			const prev = backoff.get(snap.plan);
+			const hits = (prev?.hits ?? 0) + 1;
+			backoff.set(snap.plan, {
+				until: opts.now + nextBackoffMs(hits),
+				hits,
+			});
+		}
+	}
+	const presented = snapshots.map((snap) => {
+		if (
+			snap.status === "error" &&
+			!(snap.error ?? "").startsWith("no billing")
+		) {
+			return lastGood.get(snap.plan) ?? snap;
+		}
+		return snap;
+	});
+
 	if (opts.showResets) {
 		try {
 			const announcement = await fetchResetAnnouncement(opts);
 			if (announcement) {
-				for (const s of snapshots) {
+				for (const s of presented) {
 					if (s.plan === "codex" && s.status === "ok") {
 						s.announcement = announcement;
 						break;
@@ -146,7 +195,7 @@ export async function fetchAllUsages(
 			// Announcements are best-effort; ignore failures.
 		}
 	}
-	return snapshots;
+	return presented;
 }
 
 /** Adapt the native fetch to the FetchLike seam (headers → plain record). */

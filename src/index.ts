@@ -245,7 +245,15 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 							width,
 							pal,
 							Date.now(),
-							state.ctx?.model?.provider,
+							{
+								provider: state.ctx?.model?.provider ?? "",
+								plan:
+									detectRoute(
+										state.ctx?.model?.provider ?? "",
+										state.ctx?.model?.baseUrl,
+										state.config.providerMap,
+									)?.plan ?? null,
+							},
 						);
 			publishDisplay(state.ctx.ui as DisplayUIContext, build);
 		});

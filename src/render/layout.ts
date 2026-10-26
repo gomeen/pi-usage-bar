@@ -224,17 +224,6 @@ function hasContent(snap: UsageSnapshot, config: UsageBarConfig): boolean {
 	return snap.announcement !== undefined && config.show_resets;
 }
 
-/**
- * The plan kind the active provider maps to, taken from its own snapshot
- * when present (the snapshot may be hidden from `visible`, so search all).
- */
-function activePlanFor(
-	snapshots: UsageSnapshot[],
-	activeProvider: string,
-): PlanKind | null {
-	return snapshots.find((s) => s.provider === activeProvider)?.plan ?? null;
-}
-
 /** Compact one-line item for a non-active plan: `Name 5h·17%/7d·3%`. */
 function compactItem(
 	snap: UsageSnapshot,
@@ -243,7 +232,9 @@ function compactItem(
 	now: number,
 ): string | null {
 	if (snap.status === "error") {
-		return null;
+		// Never vanish silently: a failing plan stays visible as a warning
+		// marker (last-good is normally served by the facade before this).
+		return `${fg(palette.mute)}${displayName(snap)}${RESET} ${fg(palette.warn)}⚠${RESET}`;
 	}
 	const bits: string[] = [];
 	for (const w of snap.windows) {
@@ -337,7 +328,7 @@ export function renderStatus(
 	width: number,
 	palette: Palette,
 	now: number,
-	activeProvider?: string,
+	active?: { provider: string; plan: PlanKind | null },
 ): string[] {
 	if (snapshots.length === 0) {
 		return [];
@@ -353,21 +344,20 @@ export function renderStatus(
 	if (
 		multi &&
 		config.display.compact_others &&
-		activeProvider !== undefined &&
-		activeProvider !== ""
+		active !== undefined &&
+		active.provider !== ""
 	) {
-		const activePlan = activePlanFor(snapshots, activeProvider);
-		const active =
-			visible.find((s) => s.provider === activeProvider) ??
-			(activePlan === null
+		const activeSnap =
+			visible.find((s) => s.provider === active.provider) ??
+			(active.plan === null
 				? undefined
-				: visible.find((s) => s.plan === activePlan)) ??
+				: visible.find((s) => s.plan === active.plan)) ??
 			visible[0];
-		if (!active) {
+		if (!activeSnap) {
 			return [];
 		}
-		const rest = visible.filter((s) => s !== active);
-		const activeSeg = renderSegment(active, config, palette, now, false, 0);
+		const rest = visible.filter((s) => s !== activeSnap);
+		const activeSeg = renderSegment(activeSnap, config, palette, now, false, 0);
 		const items = rest.map((s) => compactItem(s, config, palette, now));
 		const lines: string[] = [];
 		if (activeSeg !== null) {

@@ -651,14 +651,10 @@ it("compact mode: active full, others as one summary line", () => {
 		status: "ok",
 		fetchedAt: NOW,
 	};
-	const lines = renderStatus(
-		[codex, zai],
-		cfg(),
-		120,
-		GRAPHITE,
-		NOW,
-		"zai-coding-cn",
-	);
+	const lines = renderStatus([codex, zai], cfg(), 120, GRAPHITE, NOW, {
+		provider: "zai-coding-cn",
+		plan: "zai",
+	});
 	expect(lines).toHaveLength(2);
 	const l0 = strip(lines[0] ?? "");
 	const l1 = strip(lines[1] ?? "");
