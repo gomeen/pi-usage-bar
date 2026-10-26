@@ -26,19 +26,23 @@ function readColor(theme: PiTheme, ...keys: string[]): RGB | null {
 			value.every((n) => typeof n === "number")
 		) {
 			return [value[0], value[1], value[2]] as RGB;
-			if (
-				value &&
-				typeof value === "object" &&
-				typeof (value as { r?: unknown }).r === "number" &&
-				typeof (value as { g?: unknown }).g === "number" &&
-				typeof (value as { b?: unknown }).b === "number"
-			) {
-				const c = value as { r: number; g: number; b: number };
-				return [c.r, c.g, c.b] as RGB;
-			}
+		}
+		if (isRgbObject(value)) {
+			const c = value as { r: number; g: number; b: number };
+			return [c.r, c.g, c.b] as RGB;
 		}
 	}
 	return null;
+}
+
+function isRgbObject(value: unknown): boolean {
+	return (
+		!!value &&
+		typeof value === "object" &&
+		typeof (value as { r?: unknown }).r === "number" &&
+		typeof (value as { g?: unknown }).g === "number" &&
+		typeof (value as { b?: unknown }).b === "number"
+	);
 }
 
 /** Graphite fallback values per slot (research/cs-style-spec.md §3.1). */

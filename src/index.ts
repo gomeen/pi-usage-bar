@@ -203,11 +203,11 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 
 	function render(): void {
 		const ctx = state.ctx;
-		if (!ctx || ctx.mode !== "tui" || state.renderQueued) return;
+		if (ctx?.mode !== "tui" || state.renderQueued) return;
 		state.renderQueued = true;
 		queueMicrotask(() => {
 			state.renderQueued = false;
-			if (!state.ctx || state.ctx.mode !== "tui") return;
+			if (state.ctx?.mode !== "tui") return;
 			const pal = palette(state.ctx);
 			const build = (width: number): string[] =>
 				state.snapshots.length === 0

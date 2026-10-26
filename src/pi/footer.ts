@@ -66,7 +66,7 @@ export function publishFooter(
 	}
 
 	ctx.setStatus(STATUS_KEY, undefined);
-	ctx.setFooter((tui, theme, footerData) => {
+	ctx.setFooter((_tui, _theme, footerData) => {
 		const others: string[] = [];
 		const statuses = footerData.getExtensionStatuses();
 		for (const [key, text] of statuses) {

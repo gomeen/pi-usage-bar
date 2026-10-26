@@ -6,7 +6,6 @@
 
 import { configFilePath, loadConfig, sparseSave } from "../config.js";
 import { planDisplayLabel } from "../detect.js";
-import type { FacadeOpts, FetchTarget } from "../providers/facade.js";
 import type { UsageBarConfig, UsageSnapshot } from "../types.js";
 
 export interface CommandUIContext {
