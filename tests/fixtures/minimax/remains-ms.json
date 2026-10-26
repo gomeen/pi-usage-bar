@@ -1,0 +1,14 @@
+{
+	"base_resp": { "status_code": 0, "status_msg": "success" },
+	"model_remains": [
+		{
+			"model_name": "MiniMax-M*",
+			"remains_time": 1500000000,
+			"weekly_remains_time": 2600000000,
+			"current_interval_total_count": 1500,
+			"current_weekly_total_count": 10500,
+			"current_interval_remaining_percent": 40,
+			"current_weekly_remaining_percent": 65
+		}
+	]
+}

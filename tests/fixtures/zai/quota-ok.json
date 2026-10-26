@@ -1,0 +1,44 @@
+{
+	"code": 200,
+	"msg": "success",
+	"success": true,
+	"data": {
+		"level": "pro",
+		"planName": "GLM Coding Pro",
+		"limits": [
+			{
+				"type": "CREDIT_LIMIT",
+				"unit": 3,
+				"number": 5,
+				"usage": 600000,
+				"total": 600000,
+				"currentValue": 90000,
+				"remaining": 510000,
+				"percentage": 15,
+				"nextResetTime": 1776586800000
+			},
+			{
+				"type": "CREDIT_LIMIT",
+				"unit": 6,
+				"number": 1,
+				"usage": 3000000,
+				"currentValue": 1260000,
+				"remaining": 1740000,
+				"percentage": 42,
+				"nextResetTime": 1777000000000
+			},
+			{
+				"type": "TIME_LIMIT",
+				"unit": 5,
+				"number": 1,
+				"usage": 1000,
+				"currentValue": 1433,
+				"usageDetails": [
+					{ "modelCode": "search-prime", "usage": 1433 },
+					{ "modelCode": "web-reader", "usage": 0 },
+					{ "modelCode": "zread", "usage": 0 }
+				]
+			}
+		]
+	}
+}
