@@ -41,15 +41,16 @@ async function inspectMenu(
 
 const screen = (component: SettingsList) => component.render(160).join("\n");
 
-test("details and three categories are at the root with a labeled sample preview", async () => {
+test("details and three categories render without a duplicate preview", async () => {
 	await inspectMenu((c) => {
 		expect(screen(c)).toContain("Usage details");
 		for (const name of ["Appearance", "Display", "Advanced"])
 			expect(screen(c)).toContain(name);
 		expect(screen(c)).not.toContain("Settings");
-		expect(screen(c)).toContain("sample data");
-		expect(screen(c)).toContain("4sapi");
-		expect(screen(c)).not.toContain("4sapi.com");
+		expect(screen(c)).not.toMatch(
+			/Preview ·|sample data|changes saved immediately/,
+		);
+		expect(screen(c)).not.toContain("4sapi");
 		c.handleInput("\r");
 		expect(screen(c)).toContain("No usage data yet");
 		c.handleInput("\u001b");
@@ -58,7 +59,7 @@ test("details and three categories are at the root with a labeled sample preview
 	});
 });
 
-test("style arrows immediately save and update the full preview; Esc keeps changes", async () => {
+test("style arrows immediately apply without an extra preview; Esc keeps changes", async () => {
 	const changed = vi.fn();
 	await inspectMenu((c) => {
 		c.selectItem("Appearance");
@@ -71,8 +72,8 @@ test("style arrows immediately save and update the full preview; Esc keeps chang
 		expect(changed.mock.calls[0]?.[0].bar_glyph).toBe("thin");
 		expect(sparseSave).toHaveBeenCalledOnce();
 		expect(screen(c)).toContain("already saved");
-		const preview = screen(c).split("── Preview")[1];
-		expect(preview).toContain("━");
+		expect(screen(c)).toContain("━");
+		expect(screen(c)).not.toContain("── Preview");
 		c.handleInput("\u001b");
 		expect(screen(c)).toContain("Aurora thin");
 		expect(changed).toHaveBeenCalledOnce();
@@ -85,14 +86,14 @@ test("style arrows immediately save and update the full preview; Esc keeps chang
 	}, changed);
 });
 
-test("display toggles affect preview immediately and save domain values", async () => {
+test("display toggles immediately apply domain values without duplicating the bar", async () => {
 	const changed = vi.fn();
 	await inspectMenu((c) => {
 		c.selectItem("Display");
 		c.handleInput("\r");
 		c.handleInput("\r");
 		expect(changed.mock.calls[0]?.[0].display.mode).toBe("active");
-		expect(screen(c).split("── Preview")[1]).not.toContain("ZAI");
+		expect(screen(c)).not.toContain("── Preview");
 		c.handleInput("\r");
 		c.handleInput("\u001b[B");
 		c.handleInput("\r");
@@ -114,7 +115,7 @@ test("advanced shows units, saves refresh interval and opens mapping instruction
 		c.handleInput("\r");
 		c.handleInput("\r");
 		expect(changed.mock.calls[0]?.[0].refresh_minutes).toBe(1);
-		expect(screen(c)).toContain("Refresh every 1 min");
+		expect(screen(c)).toContain("1 min");
 		c.handleInput("\u001b[B");
 		c.handleInput("\r");
 		expect(screen(c)).toContain("/test/usage-bar.json");
@@ -126,7 +127,7 @@ test("advanced shows units, saves refresh interval and opens mapping instruction
 
 test("live provider detail navigation returns one level at a time", async () => {
 	await inspectMenu((c) => {
-		expect(screen(c)).toContain("live data");
+		expect(screen(c)).not.toContain("── Preview");
 		c.handleInput("\r");
 		c.handleInput("\r");
 		expect(screen(c)).toContain("5h: 42%   resets unknown");

@@ -10,7 +10,7 @@ Subscription plan usage bars for the [Pi](https://github.com/earendil-works/pi) 
 - **Four looks**: aurora block (default), aurora thin, ring (`◔ 14% 5h · resets 1h07m`), and classic battery — all switchable live
 - **Relay balances**: custom providers on one-api/new-api relays automatically show their remaining balance (`bal $200.00`)
 - **Official reset announcements** for Codex plans via [codex-resets.com](https://codex-resets.com) (`↻ Official reset · 21h ago`)
-- **`/usage`** opens a single menu for provider details, **Appearance**, **Display**, and **Advanced**, with a live preview; **`--usage`** prints a one-line JSON smoke test
+- **`/usage`** opens a single menu for provider details, **Appearance**, **Display**, and **Advanced**, with changes applied to the actual usage bar; **`--usage`** prints a one-line JSON smoke test
 
 ## Supported plans
 
@@ -34,7 +34,7 @@ Restart Pi (or `/reload`). Authenticate your plans through Pi's `/login` — the
 
 ## Configuration
 
-Everything lives in `~/.pi/agent/usage-bar.json` (sparse — only non-default keys are written). Edit it directly or open `/usage`. Choose **Appearance**, **Display**, or **Advanced** to change values with Enter/Space; changes save immediately. A persistent preview reflects every display setting using current snapshots (or clearly labeled sample data when none are available). **Appearance** → **Bar style** lets you switch between four styles with ↑↓; each move saves and applies immediately. **Display** controls visible plans, reset information, and balances. **Advanced** contains the refresh interval and **Provider mapping** instructions for editing `providerMap` in the JSON file. Esc returns one level at a time without reverting saved changes. Relay domain labels are shortened for display (`api.4sapi.com` → `4sapi`); provider IDs and request URLs stay unchanged.
+Everything lives in `~/.pi/agent/usage-bar.json` (sparse — only non-default keys are written). Edit it directly or open `/usage`. Choose **Appearance**, **Display**, or **Advanced** to change values with Enter/Space; changes save immediately. Changes are visible directly in the actual usage bar; no duplicate preview panel is shown. **Appearance** → **Bar style** lets you switch between four styles with ↑↓; each move saves and applies immediately. **Display** controls visible plans, reset information, and balances. **Advanced** contains the refresh interval and **Provider mapping** instructions for editing `providerMap` in the JSON file. Esc returns one level at a time without reverting saved changes. Relay domain labels are shortened for display (`api.4sapi.com` → `4sapi`); provider IDs and request URLs stay unchanged.
 
 | Key | Default | Meaning |
 |---|---|---|

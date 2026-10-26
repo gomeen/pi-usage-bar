@@ -307,24 +307,11 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 	pi.registerCommand("usage", {
 		description: "Show usage details and settings",
 		handler: async (_args, commandCtx) => {
-			await runUsageCommand(
-				commandCtx.ui,
-				state.snapshots,
-				(cfg) => {
-					state.config = cfg;
-					schedule(cfg.refresh_minutes * 60_000);
-					render();
-				},
-				{
-					provider: commandCtx.model?.provider ?? "",
-					plan:
-						detectRoute(
-							commandCtx.model?.provider ?? "",
-							commandCtx.model?.baseUrl,
-							state.config.providerMap,
-						)?.plan ?? null,
-				},
-			);
+			await runUsageCommand(commandCtx.ui, state.snapshots, (cfg) => {
+				state.config = cfg;
+				schedule(cfg.refresh_minutes * 60_000);
+				render();
+			});
 		},
 	});
 

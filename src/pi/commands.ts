@@ -1,4 +1,4 @@
-/** Single /usage menu with details, configuration, and a live preview. */
+/** Single /usage menu; configuration changes update the actual usage bar. */
 
 import { DynamicBorder } from "@earendil-works/pi-coding-agent";
 import {
@@ -6,13 +6,11 @@ import {
 	SettingsList,
 	type SettingsListTheme,
 	Text,
-	truncateToWidth,
 } from "@earendil-works/pi-tui";
 import { configFilePath, loadConfig, sparseSave } from "../config.js";
 import { planDisplayLabel } from "../detect.js";
 import { applyColorOverrides, GRAPHITE } from "../render/theme.js";
 import type { UsageBarConfig, UsageSnapshot } from "../types.js";
-import { type ActiveUsage, buildUsagePreview } from "./preview.js";
 import {
 	buildVariantPreviews,
 	STYLE_VARIANTS,
@@ -246,26 +244,10 @@ const SECTIONS: readonly SettingsSection[] = [
 	},
 ];
 
-class UsageMenu extends SettingsList {
-	constructor(
-		items: SettingItem[],
-		theme: SettingsListTheme,
-		onCancel: () => void,
-		private preview: (width: number) => string[],
-	) {
-		super(items, 12, theme, () => {}, onCancel, { enableSearch: true });
-	}
-
-	override render(width: number): string[] {
-		return [...super.render(width), "", ...this.preview(width)];
-	}
-}
-
 export async function runUsageCommand(
 	ui: CommandUIContext,
 	snapshots: UsageSnapshot[],
 	onChanged: (cfg: UsageBarConfig) => void,
-	active?: ActiveUsage,
 ): Promise<void> {
 	const cfg = loadConfig();
 	await ui.custom<null>((tui, theme, keybindings, done) => {
@@ -426,34 +408,13 @@ export async function runUsageCommand(
 							back,
 						),
 		};
-		return new UsageMenu(
+		return new SettingsList(
 			[details, ...SECTIONS.map(categoryItem)],
+			12,
 			listTheme,
+			() => {},
 			() => done(null),
-			(width) => {
-				const preview = buildUsagePreview(
-					snapshots,
-					cfg,
-					width,
-					palette(),
-					Date.now(),
-					active,
-				);
-				return [
-					th.fg(
-						"dim",
-						truncateToWidth(
-							`── Preview · ${preview.source === "live" ? "live data" : "sample data"} · changes saved immediately ──`,
-							width,
-						),
-					),
-					...preview.lines.map((line) => truncateToWidth(line, width)),
-					th.fg(
-						"dim",
-						truncateToWidth(`Refresh every ${cfg.refresh_minutes} min`, width),
-					),
-				];
-			},
+			{ enableSearch: true },
 		);
 	});
 }

@@ -37,7 +37,7 @@ status: open
 - [Style prototype with fake data](010-style-prototype.md): 默认 aurora block + cs 绿 + bar12/regular；↻ 跟 Codex 段尾、⏰ cs 原样格式；bal 只显剩余金额（修正 013 的油表条方案）；显示策略=配置优先/未配置显全/超宽换行（需 setFooter 多行，截断退化堆叠）；原型 prototypes/style-demo.html。
 - [Toolchain and scaffold lock](011-toolchain-scaffold.md): 一个深模块（UsageSnapshot 管线）+ 三条缝（数据/渲染/pi 适配）；vitest + 零运行时依赖 + biome + TS 源码直发；四层测试（fixture/golden/集成/冒烟）；CI=typecheck→test→pack 验证。
 - [Provider detection and providerMap spec](008-provider-detection-mapping-spec.md): Codex 凭据走新 ID `openai`（实测 oauth 类型佐证）；自动映射表+手动 providerMap 优先+自定义 ID 自动探中转站；网关场景显示实际扣钱账户；凭据判别优先文档化信号、歧义双试隔离 compat。
-- [Config schema and slash command surface](009-config-schema-slash-commands.md): 单一全局 `~/.pi/agent/usage-bar.json` 稀疏写入；16 键全量键表定稿；后续按用户反馈合并为 `/usage` 单入口，一级菜单直接列 Usage details / Appearance / Display / Advanced，去掉中间 Settings 层，页面附完整实时预览，修改立即保存（样式 ↑↓ 即切换），Bar style 为唯一样式入口，providerMap 配置说明收进 Advanced，分类摘要使用可读名称和单位；`--usage` 一行 JSON 永不含凭据。
+- [Config schema and slash command surface](009-config-schema-slash-commands.md): 单一全局 `~/.pi/agent/usage-bar.json` 稀疏写入；16 键全量键表定稿；后续按用户反馈合并为 `/usage` 单入口，一级菜单直接列 Usage details / Appearance / Display / Advanced，去掉中间 Settings 层，修改直接作用于实际用量条，移除重复 Preview 区域，样式对比保留且 ↑↓ 即保存，Bar style 为唯一样式入口，providerMap 配置说明收进 Advanced，分类摘要使用可读名称和单位；`--usage` 一行 JSON 永不含凭据。
 - [Robustness spec](014-robustness-spec.md): Claude 按 Retry-After 退避、其他家 1→5→15 分钟；stale=3 倍刷新间隔标⟳、超 1 小时变暗；多进程共享缓存+锁；MiniMax reset 三级兜底绝不编造；每家错误隔离。
 - [Release process](015-release-process.md): 包名 `@gomeen/pi-usage-bar`（裸名已被占）；`pi-package` 关键字进 pi.dev/packages 画廊；发版全自动（tag→CI→publish，需 NPM_TOKEN secret）；README.md 英文 + README.zh.md 中文互链，致谢带仓库链接。
 
