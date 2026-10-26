@@ -10,7 +10,7 @@
 - **四种 look**：aurora 块条（默认）、aurora 细线、ring（`◔ 14% 5h · resets 1h07m`）、classic 电池条——全部可实时切换
 - **中转站余额**：one-api/new-api 系中转的自定义 provider 自动探测计费端点，显示剩余金额（`bal $200.00`）
 - **官方重置公告**：Codex 套餐接入 [codex-resets.com](https://codex-resets.com)（`↻ Official reset · 21h ago`）
-- **`/usage`** 单一入口查看套餐详情或进入内层 **Settings**，**`--usage`** 一行 JSON 冒烟测试
+- **`/usage`** 单一入口查看套餐详情或进入 **Appearance / Display / Advanced**，附实时预览，**`--usage`** 一行 JSON 冒烟测试
 
 ## 支持的套餐
 
@@ -34,7 +34,7 @@ pi install npm:@gomeen/pi-usage-bar
 
 ## 配置
 
-配置在 `~/.pi/agent/usage-bar.json`（稀疏写入——只存非默认键）。可以直接改文件，也可以打开 `/usage` → **Settings**，再选择 **Appearance**（外观）、**Display**（显示内容）或 **Advanced**（高级）。Enter/Space 切换值并立即保存。**Appearance** → **Bar style** 实时预览并选择四种样式；**Display** 管理显示套餐、重置信息和余额；**Advanced** 包含刷新间隔和 **Provider mapping** 配置说明，结构化的 `providerMap` 条目仍在 JSON 文件中编辑。Esc 逐级返回。
+配置在 `~/.pi/agent/usage-bar.json`（稀疏写入——只存非默认键）。可以直接改文件，也可以打开 `/usage`，直接选择 **Appearance**（外观）、**Display**（显示内容）或 **Advanced**（高级）。Enter/Space 切换值并立即保存。页面下方固定展示完整用量条预览，优先使用当前数据，无数据时明确标为示例。**Appearance** → **Bar style** 用 ↑↓ 切换四种样式，每次切换立即保存并应用；**Display** 管理显示套餐、重置信息和余额；**Advanced** 包含刷新间隔和 **Provider mapping** 配置说明，结构化的 `providerMap` 条目仍在 JSON 文件中编辑。Esc 逐级返回，不撤销已保存的修改。中转站域名只缩短展示标签（`api.4sapi.com` → `4sapi`），provider ID 与请求地址不变。
 
 | 键 | 默认 | 含义 |
 |---|---|---|

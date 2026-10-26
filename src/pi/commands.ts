@@ -1,4 +1,4 @@
-/** Single /usage menu with provider details and nested settings. */
+/** Single /usage menu with details, configuration, and a live preview. */
 
 import { DynamicBorder } from "@earendil-works/pi-coding-agent";
 import {
@@ -6,16 +6,19 @@ import {
 	SettingsList,
 	type SettingsListTheme,
 	Text,
+	truncateToWidth,
 } from "@earendil-works/pi-tui";
 import { configFilePath, loadConfig, sparseSave } from "../config.js";
 import { planDisplayLabel } from "../detect.js";
 import { applyColorOverrides, GRAPHITE } from "../render/theme.js";
 import type { UsageBarConfig, UsageSnapshot } from "../types.js";
+import { type ActiveUsage, buildUsagePreview } from "./preview.js";
 import {
 	buildVariantPreviews,
 	STYLE_VARIANTS,
 	StylePickerComponent,
 } from "./stylePicker.js";
+import { paletteFromPiTheme } from "./theme.js";
 
 export interface CommandUIContext {
 	select(
@@ -64,47 +67,6 @@ function describeSnapshot(s: UsageSnapshot): string[] {
 		`Fetched: ${new Date(s.fetchedAt).toISOString().replace("T", " ").slice(0, 19)} UTC`,
 	);
 	return lines;
-}
-
-/** /usage — one entry for details and settings. */
-export async function runUsageCommand(
-	ui: CommandUIContext,
-	snapshots: UsageSnapshot[],
-	openSettings: () => Promise<void>,
-): Promise<void> {
-	while (true) {
-		const choice = await ui.select("Usage bar", ["Usage details", "Settings"]);
-		if (choice === undefined) return;
-		if (choice === "Settings") {
-			await openSettings();
-		} else if (choice === "Usage details") {
-			await showUsageDetails(ui, snapshots);
-		}
-	}
-}
-
-async function showUsageDetails(
-	ui: CommandUIContext,
-	snapshots: UsageSnapshot[],
-): Promise<void> {
-	if (snapshots.length === 0) {
-		ui.notify("No usage data yet — wait for the first refresh.", "info");
-		return;
-	}
-	const labels = snapshots.map(
-		(s) => `${planDisplayLabel(s.plan)} · ${s.provider}`,
-	);
-	while (true) {
-		const providerChoice = await ui.select("Usage details", labels);
-		if (providerChoice === undefined) return;
-		const idx = labels.indexOf(providerChoice);
-		const snap = snapshots[idx];
-		if (!snap) return;
-		await ui.select(`${planDisplayLabel(snap.plan)} · ${snap.provider}`, [
-			...describeSnapshot(snap),
-			"Back",
-		]);
-	}
 }
 
 interface Setting {
@@ -284,14 +246,33 @@ const SECTIONS: readonly SettingsSection[] = [
 	},
 ];
 
-export async function runConfigCommand(
+class UsageMenu extends SettingsList {
+	constructor(
+		items: SettingItem[],
+		theme: SettingsListTheme,
+		onCancel: () => void,
+		private preview: (width: number) => string[],
+	) {
+		super(items, 12, theme, () => {}, onCancel, { enableSearch: true });
+	}
+
+	override render(width: number): string[] {
+		return [...super.render(width), "", ...this.preview(width)];
+	}
+}
+
+export async function runUsageCommand(
 	ui: CommandUIContext,
+	snapshots: UsageSnapshot[],
 	onChanged: (cfg: UsageBarConfig) => void,
-	snapshots: UsageSnapshot[] = [],
+	active?: ActiveUsage,
 ): Promise<void> {
 	const cfg = loadConfig();
 	await ui.custom<null>((tui, theme, keybindings, done) => {
-		const th = theme as { fg(token: string, text: string): string };
+		const th = theme as {
+			fg(token: string, text: string): string;
+			colors: Record<string, unknown>;
+		};
 		const listTheme: SettingsListTheme = {
 			label: (text, selected) => (selected ? th.fg("accent", text) : text),
 			value: (text, selected) => th.fg(selected ? "accent" : "muted", text),
@@ -304,6 +285,37 @@ export async function runConfigCommand(
 		const save = () => {
 			sparseSave(cfg);
 			onChanged(cfg);
+		};
+		const palette = () =>
+			applyColorOverrides(
+				cfg.theme === "pi" ? paletteFromPiTheme(th) : GRAPHITE,
+				cfg.color_ok,
+				cfg.color_warn,
+				cfg.color_hot,
+			);
+		const info = (title: string, lines: string[], back: () => void) => {
+			const text = new Text(
+				[
+					th.fg("accent", title),
+					"",
+					...lines,
+					"",
+					th.fg("dim", "Enter or Esc to return"),
+				].join("\n"),
+				1,
+				0,
+			);
+			return {
+				render: (width: number) => text.render(width),
+				invalidate: () => text.invalidate(),
+				handleInput: (data: string) => {
+					if (
+						keybindings.matches(data, "tui.select.cancel") ||
+						keybindings.matches(data, "tui.select.confirm")
+					)
+						back();
+				},
+			};
 		};
 		const categoryItem = (section: SettingsSection): SettingItem => ({
 			id: section.label,
@@ -328,28 +340,20 @@ export async function runConfigCommand(
 						description: "Preview and choose a bar style with your usage data.",
 						currentValue: styleLabel(cfg),
 						submenu: (_value, styleDone) => {
-							const palette = applyColorOverrides(
-								GRAPHITE,
-								cfg.color_ok,
-								cfg.color_warn,
-								cfg.color_hot,
-							);
 							return new StylePickerComponent(
 								keybindings,
 								requestRender,
-								buildVariantPreviews(snapshots, cfg, palette, Date.now()),
+								buildVariantPreviews(snapshots, cfg, palette(), Date.now()),
 								STYLE_VARIANTS.map((v) => v.label),
 								styleIndex(cfg),
-								(result) => {
-									if (result) {
-										cfg.style = result.style;
-										cfg.bar_glyph = result.glyph;
-										save();
-									}
-									styleDone(result?.label);
-								},
+								() => styleDone(styleLabel(cfg)),
 								th,
 								new DynamicBorder((text: string) => th.fg("accent", text)),
+								(result) => {
+									cfg.style = result.style;
+									cfg.bar_glyph = result.glyph;
+									save();
+								},
 							);
 						},
 					});
@@ -362,35 +366,19 @@ export async function runConfigCommand(
 						description:
 							"View instructions for mapping custom providers in the configuration file.",
 						currentValue: `${mappingCount} ${mappingCount === 1 ? "mapping" : "mappings"}`,
-						submenu: (_value, mappingDone) => {
-							const text = new Text(
+						submenu: (_value, mappingDone) =>
+							info(
+								"Provider mapping",
 								[
-									th.fg("accent", "Provider mapping"),
-									"",
 									"Edit providerMap in:",
 									configFilePath(),
 									"",
 									'Example: { "providerMap": { "my-provider": "zai-cn" } }',
 									"",
 									"Run /reload after saving the file.",
-									"",
-									th.fg("dim", "Enter or Esc to return"),
-								].join("\n"),
-								1,
-								0,
-							);
-							return {
-								render: (width) => text.render(width),
-								invalidate: () => text.invalidate(),
-								handleInput: (data) => {
-									if (
-										keybindings.matches(data, "tui.select.cancel") ||
-										keybindings.matches(data, "tui.select.confirm")
-									)
-										mappingDone();
-								},
-							};
-						},
+								],
+								mappingDone,
+							),
 					});
 				}
 				return new SettingsList(
@@ -409,13 +397,63 @@ export async function runConfigCommand(
 				);
 			},
 		});
-		return new SettingsList(
-			SECTIONS.map(categoryItem),
-			12,
+		const details: SettingItem = {
+			id: "usage-details",
+			label: "Usage details",
+			description: "Inspect quota windows, balances, and provider status.",
+			currentValue:
+				snapshots.length === 0
+					? "No data yet"
+					: `${snapshots.length} providers`,
+			submenu: (_value, back) =>
+				snapshots.length === 0
+					? info(
+							"Usage details",
+							["No usage data yet — wait for the first refresh."],
+							back,
+						)
+					: new SettingsList(
+							snapshots.map((snapshot, index) => ({
+								id: String(index),
+								label: `${planDisplayLabel(snapshot.plan)} · ${snapshot.provider}`,
+								currentValue: snapshot.status,
+								submenu: (_status, detailBack) =>
+									info("Usage details", describeSnapshot(snapshot), detailBack),
+							})),
+							12,
+							listTheme,
+							() => {},
+							back,
+						),
+		};
+		return new UsageMenu(
+			[details, ...SECTIONS.map(categoryItem)],
 			listTheme,
-			() => {},
 			() => done(null),
-			{ enableSearch: true },
+			(width) => {
+				const preview = buildUsagePreview(
+					snapshots,
+					cfg,
+					width,
+					palette(),
+					Date.now(),
+					active,
+				);
+				return [
+					th.fg(
+						"dim",
+						truncateToWidth(
+							`── Preview · ${preview.source === "live" ? "live data" : "sample data"} · changes saved immediately ──`,
+							width,
+						),
+					),
+					...preview.lines.map((line) => truncateToWidth(line, width)),
+					th.fg(
+						"dim",
+						truncateToWidth(`Refresh every ${cfg.refresh_minutes} min`, width),
+					),
+				];
+			},
 		);
 	});
 }

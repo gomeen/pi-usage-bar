@@ -9,7 +9,7 @@ import type {
 import { FileCache } from "./cache.js";
 import { loadConfig, resolveEndpointOverrides } from "./config.js";
 import { detectRoute, PLAN_HOSTS } from "./detect.js";
-import { runConfigCommand, runUsageCommand } from "./pi/commands.js";
+import { runUsageCommand } from "./pi/commands.js";
 import {
 	type RegistryLike,
 	resolveCredential,
@@ -307,16 +307,23 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 	pi.registerCommand("usage", {
 		description: "Show usage details and settings",
 		handler: async (_args, commandCtx) => {
-			await runUsageCommand(commandCtx.ui, state.snapshots, () =>
-				runConfigCommand(
-					commandCtx.ui,
-					(cfg) => {
-						state.config = cfg;
-						schedule(cfg.refresh_minutes * 60_000);
-						render();
-					},
-					state.snapshots,
-				),
+			await runUsageCommand(
+				commandCtx.ui,
+				state.snapshots,
+				(cfg) => {
+					state.config = cfg;
+					schedule(cfg.refresh_minutes * 60_000);
+					render();
+				},
+				{
+					provider: commandCtx.model?.provider ?? "",
+					plan:
+						detectRoute(
+							commandCtx.model?.provider ?? "",
+							commandCtx.model?.baseUrl,
+							state.config.providerMap,
+						)?.plan ?? null,
+				},
 			);
 		},
 	});

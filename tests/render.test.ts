@@ -588,6 +588,39 @@ describe("wrapping and density", () => {
 // ---------------------------------------------------------------------------
 
 describe("display semantics", () => {
+	it.each([
+		["4sapi.com", "4sapi"],
+		["api.4sapi.com", "4sapi"],
+		["https://api.4sapi.com/v1", "4sapi"],
+		["api.example.co.uk", "example"],
+		["my-relay", "my-relay"],
+		["127.0.0.1", "127.0.0.1"],
+	])(
+		"shortens relay display %s without changing snapshot identity",
+		(provider, name) => {
+			const relay = snap();
+			relay.provider = provider;
+			relay.plan = "relay";
+			relay.balance = { kind: "relay", amount: 200 };
+			const codex = snap();
+			codex.windows = workedWindows();
+			for (const active of [provider, codex.provider]) {
+				const rendered = renderStatus(
+					[relay, codex],
+					cfg(),
+					200,
+					GRAPHITE,
+					NOW,
+					{ provider: active, plan: active === provider ? "relay" : "codex" },
+				)
+					.map(strip)
+					.join("\n");
+				expect(rendered).toContain(name);
+				if (provider !== name) expect(rendered).not.toContain(provider);
+			}
+			expect(relay.provider).toBe(provider);
+		},
+	);
 	it("returns [] for an empty snapshot list", () => {
 		expect(renderStatus([], cfg(), 200, GRAPHITE, NOW)).toEqual([]);
 	});

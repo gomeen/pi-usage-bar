@@ -96,6 +96,7 @@ export class StylePickerComponent implements Component {
 		private done: (result: StyleVariant | null) => void,
 		private theme: ThemeLike,
 		private border: DynamicBorder,
+		private onSelect?: (variant: StyleVariant) => void,
 	) {}
 
 	render(width: number): string[] {
@@ -103,7 +104,12 @@ export class StylePickerComponent implements Component {
 		const lines: string[] = [
 			t.fg("accent", " Bar style"),
 			"",
-			t.fg("dim", " Preview bar styles · Enter to apply"),
+			t.fg(
+				"dim",
+				this.onSelect
+					? " ↑↓ switches and saves immediately"
+					: " Preview bar styles · Enter to apply",
+			),
 			...this.border.render(width),
 			"",
 		];
@@ -118,7 +124,14 @@ export class StylePickerComponent implements Component {
 		lines.push("");
 		lines.push(...this.border.render(width));
 		lines.push("");
-		lines.push(t.fg("dim", " ↑↓ move · Enter apply · Esc cancel"));
+		lines.push(
+			t.fg(
+				"dim",
+				this.onSelect
+					? " ↑↓ select · Enter/Esc back · already saved"
+					: " ↑↓ move · Enter apply · Esc cancel",
+			),
+		);
 		return lines.map((line) => truncateToWidth(line, width));
 	}
 
@@ -126,10 +139,14 @@ export class StylePickerComponent implements Component {
 		if (this.keybindings.matches(data, "tui.select.up")) {
 			this.selected =
 				(this.selected - 1 + this.labels.length) % this.labels.length;
+			const variant = STYLE_VARIANTS[this.selected];
+			if (variant) this.onSelect?.(variant);
 			this.invalidate();
 			this.requestRender();
 		} else if (this.keybindings.matches(data, "tui.select.down")) {
 			this.selected = (this.selected + 1) % this.labels.length;
+			const variant = STYLE_VARIANTS[this.selected];
+			if (variant) this.onSelect?.(variant);
 			this.invalidate();
 			this.requestRender();
 		} else if (this.keybindings.matches(data, "tui.select.confirm")) {

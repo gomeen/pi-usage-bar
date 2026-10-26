@@ -28,13 +28,29 @@ const PLAN_NAMES: Record<PlanKind, string> = {
 
 const DIM_AFTER_MS = 3_600_000;
 
-/**
- * Display name with regional suffix only when both twins are configured:
- * "ZAI" alone when only zai-cn is present, "ZAI CN" when zai is too.
- */
+/** Short relay label only; provider identity and request URLs stay untouched. */
+function relayDisplayName(provider: string): string {
+	try {
+		const host = new URL(
+			provider.includes("://") ? provider : `https://${provider}`,
+		).hostname.replace(/\.$/, "");
+		if (!host.includes(".") || /^[\d.]+$/.test(host)) return provider;
+		const labels = host.split(".");
+		const suffix = labels.at(-1) ?? "";
+		const second = labels.at(-2) ?? "";
+		const compound =
+			suffix.length === 2 &&
+			["co", "com", "net", "org", "gov", "edu", "ac"].includes(second);
+		return labels.at(compound ? -3 : -2) ?? provider;
+	} catch {
+		return provider;
+	}
+}
+
+/** Regional suffixes distinguish twins only when both are present. */
 function displayName(snap: UsageSnapshot, present: Set<PlanKind>): string {
 	if (snap.plan === "relay") {
-		return snap.provider;
+		return relayDisplayName(snap.provider);
 	}
 	const base = PLAN_NAMES[snap.plan];
 	const isCn = snap.plan === "zai-cn" || snap.plan === "minimax-cn";
@@ -274,7 +290,7 @@ function compactItem(
 		}
 		bits.push(bit);
 	}
-	if (snap.balance !== undefined) {
+	if (snap.balance !== undefined && config.show_balance) {
 		bits.push(
 			`${fg(palette.ok)}${config.currency}${snap.balance.amount.toFixed(2)}${RESET}`,
 		);
@@ -359,7 +375,22 @@ export function renderStatus(
 	if (snapshots.length === 0) {
 		return [];
 	}
-	const visible = snapshots.filter((s) => hasContent(s, config));
+	const currentSnapshot =
+		snapshots.find((s) => s.provider === active?.provider) ??
+		(active?.plan
+			? snapshots.find((s) => s.plan === active.plan)
+			: undefined) ??
+		snapshots[0];
+	const selected =
+		config.display.mode === "active"
+			? snapshots.filter((s) => s === currentSnapshot)
+			: snapshots.filter(
+					(s) =>
+						s.plan === "relay" ||
+						config.display.providers.length === 0 ||
+						config.display.providers.includes(s.plan),
+				);
+	const visible = selected.filter((s) => hasContent(s, config));
 	if (visible.length === 0) {
 		return [];
 	}
