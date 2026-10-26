@@ -1,0 +1,38 @@
+{
+	"model_remains": [
+		{
+			"start_time": 1792980000000,
+			"end_time": 1792998000000,
+			"remains_time": 11067907,
+			"current_interval_total_count": 0,
+			"current_interval_usage_count": 0,
+			"model_name": "general",
+			"current_weekly_total_count": 0,
+			"current_weekly_usage_count": 0,
+			"weekly_start_time": 1792944000000,
+			"weekly_end_time": 1793548800000,
+			"weekly_remains_time": 561867907,
+			"current_interval_status": 1,
+			"current_interval_remaining_percent": 98,
+			"current_weekly_status": 3,
+			"current_weekly_remaining_percent": 100
+		},
+		{
+			"start_time": 1792944000000,
+			"end_time": 1793030400000,
+			"remains_time": 43467907,
+			"current_interval_total_count": 3,
+			"current_interval_usage_count": 0,
+			"model_name": "video",
+			"current_weekly_total_count": 21,
+			"current_weekly_usage_count": 3,
+			"weekly_start_time": 1792944000000,
+			"weekly_end_time": 1793548800000,
+			"weekly_remains_time": 561867907,
+			"current_interval_status": 1,
+			"current_interval_remaining_percent": 95,
+			"current_weekly_status": 1,
+			"current_weekly_remaining_percent": 86
+		}
+	]
+}

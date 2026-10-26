@@ -211,20 +211,6 @@ function weeklyResetsAt(
 	return null;
 }
 
-/**
- * A window is applicable unless its status is 3 (unlimited / not a quota) or
- * its total count is explicitly 0 (window not applicable, research §3.2).
- * Counts are never used for percent math (issue 013).
- */
-function windowApplicable(
-	entry: Record<string, unknown>,
-	prefix: string,
-): boolean {
-	if (num(entry[`${prefix}status`]) === 3) return false;
-	if (num(entry[`${prefix}total_count`]) === 0) return false;
-	return true;
-}
-
 /** Interval length when the payload states it (end_time - start_time), else null. */
 function intervalDurationSeconds(
 	entry: Record<string, unknown>,
@@ -242,7 +228,11 @@ function entryWindows(
 	now: number,
 ): QuotaWindow[] {
 	const windows: QuotaWindow[] = [];
-	if (windowApplicable(entry, "current_interval_")) {
+	{
+		// A window applies when a percent or an explicit reset exists. Zero
+		// counts and non-error status codes never disqualify it: real payloads
+		// (verified 2026-10-26) report 0/0 counts alongside valid percentages —
+		// unlimited-count plans still have live windows.
 		const percent = intervalPercent(entry);
 		const resetsAt = intervalResetsAt(entry, now);
 		if (percent !== null || resetsAt !== null) {
@@ -255,7 +245,7 @@ function entryWindows(
 			});
 		}
 	}
-	if (windowApplicable(entry, "current_weekly_")) {
+	{
 		const percent = weeklyPercent(entry);
 		const resetsAt = weeklyResetsAt(entry, now);
 		if (percent !== null || resetsAt !== null) {

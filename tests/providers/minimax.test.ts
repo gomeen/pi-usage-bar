@@ -190,7 +190,7 @@ test("percent 0..1 decimals are scaled x100; integers are literal", () => {
 	]);
 });
 
-test("status 3 (unlimited) and total 0 (not applicable) windows are skipped", () => {
+test("status 3 / total 0 windows are kept when a percent or reset exists (live CN payloads do this)", () => {
 	const snapshot = parseMiniMaxUsage(
 		{
 			base_resp: { status_code: 0 },
@@ -209,7 +209,8 @@ test("status 3 (unlimited) and total 0 (not applicable) windows are skipped", ()
 		NOW,
 	);
 	expect(snapshot.status).toBe("ok");
-	expect(snapshot.windows).toEqual([]);
+	// interval: 50 remaining → 50 used; weekly: 90 remaining → 10 used
+	expect(snapshot.windows.map((w) => w.percent)).toEqual([50, 10]);
 });
 
 test("empty model_remains is ok with no windows; non-object payload is an error", () => {
@@ -331,4 +332,27 @@ test("fetchUsage maps a thrown fetch to a network error", async () => {
 	});
 	expect(snapshot.status).toBe("error");
 	expect(snapshot.error).toBe("unavailable (network)");
+});
+
+test("live CN payload keeps general lane windows despite zero counts and status 3", () => {
+	const payload = JSON.parse(
+		readFileSync(
+			join(__dirname, "../fixtures/minimax/live-cn-general-video.json"),
+			"utf8",
+		),
+	);
+	const now = 1792986923533;
+
+	const snap = parseMiniMaxUsage(payload, "minimax-cn", now);
+	expect(snap.status).toBe("ok");
+	expect(snap.windows).toHaveLength(2);
+	const [interval, weekly] = snap.windows;
+	// interval: 98% remaining → 2% used, 5h duration, resets at end_time
+	expect(interval?.percent).toBe(2);
+	expect(interval?.label).toBe("5h");
+	expect(interval?.resetsAt).toBe(1792998000000);
+	// weekly: 100% remaining → 0% used, resets at weekly_end_time
+	expect(weekly?.percent).toBe(0);
+	expect(weekly?.label).toBe("7d");
+	expect(weekly?.resetsAt).toBe(1793548800000);
 });
