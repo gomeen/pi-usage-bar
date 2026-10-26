@@ -63,6 +63,10 @@
 <div class="term" id="secE"></div>
 <div class="cap">同一条 bar，左边 s_ok=(78,200,91) cs 绿，右边 (120,200,192) cxs 青绿。</div>
 
+<h2>F · 紧凑单行方案（两家：Codex + Claude）与 bal 形态</h2>
+<div class="term" id="secF"></div>
+<div class="cap">四档降级阶梯（自动按 footer 宽度选择）+ bal 四形态。行尾括号内为真实列宽。</div>
+
 <h2>✅ 拍板清单</h2>
 <div class="checklist">
 <ol>
@@ -241,7 +245,46 @@ function renderE(){
   document.getElementById('secE').innerHTML =
     L(span(PAL.mute,'cs 绿 (78,200,91)   ')+a)+L(span(PAL.mute,'cxs 青绿 (120,200,192) ')+b);
 }
-function renderAll(){ renderA(); renderB(); renderC(); renderD(); renderE(); }
+
+// ---- section F: compact one-line ladder + bal forms (fixed styles, independent of toggles) ----
+function winW(label,p,reset,width,glyph,withReset){
+  let out = span(PAL.mute,label)+' '+bar(p,width,glyph)+' '+pctText(p,sev(p));
+  if(withReset) out += ' '+span(PAL.edge,'⏰')+span(PAL.mute,reset||'--');
+  return out;
+}
+function ringW2(label,p){
+  return (p==null?span(PAL.edge,'○'):span(sev(p),ringGlyph(p)))+' '+pctText(p,PAL.ink)+' '+span(PAL.mute,label);
+}
+const vis = s => s.replace(/<[^>]+>/g,'').length;
+function renderF(){
+  const cs=P.codex, cl=P.claude;
+  let out='';
+  let line;
+  // F1 full
+  line = span(PAL.ink,'Codex')+' '+winW(cs.w1.label,cs.w1.p,cs.w1.reset,12,'■',true)+' '+winW(cs.w2.label,cs.w2.p,cs.w2.reset,12,'■',true)
+       + SEP() + span(PAL.ink,'Claude')+' '+winW(cl.w1.label,cl.w1.p,cl.w1.reset,12,'■',true)+' '+winW(cl.w2.label,cl.w2.p,cl.w2.reset,12,'■',true);
+  out += L(span(PAL.mute,'F1 完整 bar12+⏰        ')+line+' '+span(PAL.edge,'('+vis(line)+'列)'));
+  // F2 no resets
+  line = span(PAL.ink,'Codex')+' '+winW(cs.w1.label,cs.w1.p,null,12,'■',false)+' '+winW(cs.w2.label,cs.w2.p,null,12,'■',false)
+       + SEP() + span(PAL.ink,'Claude')+' '+winW(cl.w1.label,cl.w1.p,null,12,'■',false)+' '+winW(cl.w2.label,cl.w2.p,null,12,'■',false);
+  out += L(span(PAL.mute,'F2 去⏰               ')+line+' '+span(PAL.edge,'('+vis(line)+'列)'));
+  // F3 8-cell
+  line = span(PAL.ink,'Codex')+' '+winW(cs.w1.label,cs.w1.p,null,8,'■',false)+' '+winW(cs.w2.label,cs.w2.p,null,8,'■',false)
+       + SEP() + span(PAL.ink,'Claude')+' '+winW(cl.w1.label,cl.w1.p,null,8,'■',false)+' '+winW(cl.w2.label,cl.w2.p,null,8,'■',false);
+  out += L(span(PAL.mute,'F3 bar8+去⏰           ')+line+' '+span(PAL.edge,'('+vis(line)+'列)'));
+  // F4 ring compact
+  line = span(PAL.ink,'Codex')+' '+ringW2(cs.w1.label,cs.w1.p)+' '+ringW2(cs.w2.label,cs.w2.p)
+       + '   ' + span(PAL.ink,'Claude')+' '+ringW2(cl.w1.label,cl.w1.p)+' '+ringW2(cl.w2.label,cl.w2.p);
+  out += L(span(PAL.mute,'F4 ring 紧凑           ')+line+' '+span(PAL.edge,'('+vis(line)+'列)'));
+  out += L('');
+  // bal forms
+  out += L(span(PAL.mute,'bal a 油表条(cs同款)   ')+bal(29,'$200.00'));
+  out += L(span(PAL.mute,'bal b 百分比+金额      ')+span(PAL.mute,'bal ')+span(ok(),'29% $200.00'));
+  out += L(span(PAL.mute,'bal c 剩余/总量        ')+span(PAL.mute,'bal ')+span(ok(),'$200.00')+span(PAL.mute,'/')+span(PAL.ink,'$684.11'));
+  out += L(span(PAL.mute,'bal d 只显剩余         ')+span(PAL.mute,'bal ')+span(ok(),'$200.00'));
+  document.getElementById('secF').innerHTML=out;
+}
+function renderAll(){ renderA(); renderB(); renderC(); renderD(); renderE(); renderF(); }
 
 // ---- controls ----
 function mkBtns(elId, items, get, set){
