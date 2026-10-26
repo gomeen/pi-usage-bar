@@ -1,7 +1,10 @@
 /**
  * Live-preview style picker (cs `cs theme` experience): renders every look
  * with the user's real data, arrow keys move the highlight, Enter applies.
+ * Runs as a fullscreen custom screen (not an overlay) so it never blends
+ * into the editor behind it.
  */
+import { DynamicBorder } from "@earendil-works/pi-coding-agent";
 import type { Component } from "@earendil-works/pi-tui";
 import { renderStatus } from "../render/layout.js";
 import { applyColorOverrides, GRAPHITE } from "../render/theme.js";
@@ -79,26 +82,43 @@ export function buildVariantPreviews(
 	});
 }
 
+interface ThemeLike {
+	fg(token: string, text: string): string;
+}
+
 class StylePickerComponent implements Component {
 	constructor(
-		private keybindings: {
-			matches(data: string, action: string): boolean;
-		},
+		private keybindings: { matches(data: string, action: string): boolean },
 		private requestRender: () => void,
 		private previews: string[],
 		private labels: string[],
 		private selected: number,
 		private done: (result: StyleVariant | null) => void,
+		private theme: ThemeLike,
+		private border: DynamicBorder,
 	) {}
 
-	render(): string[] {
-		const lines: string[] = ["usage-bar style — live preview", ""];
+	render(width: number): string[] {
+		const t = this.theme;
+		const lines: string[] = [
+			t.fg("accent", " usage-bar style"),
+			"",
+			t.fg("dim", " pick a look — previews use your live data"),
+			...this.border.render(width),
+			"",
+		];
 		for (let i = 0; i < this.labels.length; i++) {
 			const marker = i === this.selected ? "❯ " : "  ";
-			lines.push(`${marker}${this.labels[i]}  ${this.previews[i]}`);
+			const head =
+				i === this.selected
+					? `${t.fg("accent", marker)}${t.fg("main", this.labels[i] ?? "")}`
+					: `${marker}${t.fg("dim", this.labels[i] ?? "")}`;
+			lines.push(`${head}   ${this.previews[i] ?? ""}`);
 		}
 		lines.push("");
-		lines.push("↑↓ move · Enter apply · Esc cancel");
+		lines.push(...this.border.render(width));
+		lines.push("");
+		lines.push(t.fg("dim", " ↑↓ move · Enter apply · Esc cancel"));
 		return lines;
 	}
 
@@ -119,19 +139,14 @@ class StylePickerComponent implements Component {
 		}
 	}
 
-	private cacheValid = false;
 	invalidate(): void {
-		this.cacheValid = false;
+		this.border.invalidate();
 	}
 	dispose(): void {
 		// nothing to release
 	}
 }
 
-/**
- * Show the picker; resolves with the chosen variant or null on cancel.
- * Applies nothing itself — the caller saves and re-renders.
- */
 export interface PickerUI {
 	custom<T>(
 		factory: (
@@ -144,6 +159,10 @@ export interface PickerUI {
 	): Promise<T>;
 }
 
+/**
+ * Show the picker; resolves with the chosen variant or null on cancel.
+ * Applies nothing itself — the caller saves and re-renders.
+ */
 export async function pickStyleVariant(
 	ui: PickerUI,
 	snapshots: UsageSnapshot[],
@@ -164,16 +183,19 @@ export async function pickStyleVariant(
 			(v) => v.style === config.style && v.glyph === config.bar_glyph,
 		),
 	);
-	return ui.custom<StyleVariant | null>(
-		(tui, _theme, keybindings, done) =>
-			new StylePickerComponent(
-				keybindings,
-				() => (tui as { requestRender(): void }).requestRender(),
-				previews,
-				labels,
-				currentIndex,
-				done,
-			),
-		{ overlay: true },
-	);
+	return ui.custom<StyleVariant | null>((tui, theme, keybindings, done) => {
+		const th = theme as ThemeLike;
+		// DynamicBorder note: pass an explicit color fn (jiti theme caveat).
+		const border = new DynamicBorder((s: string) => th.fg("accent", s));
+		return new StylePickerComponent(
+			keybindings,
+			() => (tui as { requestRender(): void }).requestRender(),
+			previews,
+			labels,
+			currentIndex,
+			done,
+			th,
+			border,
+		);
+	});
 }
