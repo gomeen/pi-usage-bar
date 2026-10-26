@@ -59,7 +59,7 @@ describe("loadConfig", () => {
 
 	it("deep-merges display fields onto defaults", () => {
 		const cfg = loadJson('{"display": {"providers": ["codex"]}}');
-		expect(cfg.display).toEqual({ mode: "active", providers: ["codex"] });
+		expect(cfg.display).toEqual({ mode: "all", providers: ["codex"] });
 	});
 
 	it("keeps file values for known keys and drops unknown keys", () => {
@@ -149,7 +149,7 @@ describe("validateConfig", () => {
 			'{"bar_width": "wide", "display": {"mode": 3}, "providerMap": [], "currency": 7, "show_resets": "yes"}',
 		);
 		expect(cfg.bar_width).toBe(12);
-		expect(cfg.display.mode).toBe("active");
+		expect(cfg.display.mode).toBe("all");
 		expect(cfg.providerMap).toEqual({});
 		expect(cfg.currency).toBe("$");
 		expect(cfg.show_resets).toBe(true);
@@ -167,10 +167,10 @@ describe("sparseSave", () => {
 	it("writes the whole nested display object when it differs", () => {
 		const cfg: UsageBarConfig = {
 			...DEFAULT_CONFIG,
-			display: { mode: "all", providers: [] },
+			display: { mode: "active", providers: [] },
 		};
 		expect(saveToString(cfg).body).toBe(
-			'{\n  "display": {\n    "mode": "all",\n    "providers": []\n  }\n}\n',
+			'{\n  "display": {\n    "mode": "active",\n    "providers": []\n  }\n}\n',
 		);
 	});
 

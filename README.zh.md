@@ -45,11 +45,12 @@ pi install npm:@gomeen/pi-usage-bar
 | `bar_width` | `12` | bar 格数 |
 | `color_ok` / `color_warn` / `color_hot` | `""` | `#rrggbb` 覆盖 |
 | `warning_threshold` / `critical_threshold` | `30` / `70` | 百分比 |
-| `display.mode` | `"active"` | `active`（当前套餐）\| `all`（全部已配置套餐） |
+| `display.mode` | `"all"` | `active`（当前套餐）\| `all`（全部已配置套餐） |
 | `display.providers` | `[]` | `all` 模式的套餐过滤 |
 | `providerMap` | `{}` | 自定义 id → 套餐，如 `{"cc-switch-zhipu-glm": "zai-cn"}` 或 `{"my-relay": {"type": "relay"}}` |
 | `refresh_minutes` | `2` | 轮询间隔（分钟） |
 | `show_resets` | `true` | 官方重置公告 |
+| `show_reset_countdown` | `false` | 每个窗口的 `⏰` 重置倒计时 |
 | `show_balance` | `true` | 中转余额探测 |
 | `currency` | `"$"` | 余额货币符号 |
 

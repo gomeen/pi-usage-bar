@@ -187,6 +187,10 @@ export function validateConfig(cfg: UsageBarConfig): UsageBarConfig {
 			typeof src.show_resets === "boolean"
 				? src.show_resets
 				: DEFAULT_CONFIG.show_resets,
+		show_reset_countdown:
+			typeof src.show_reset_countdown === "boolean"
+				? src.show_reset_countdown
+				: DEFAULT_CONFIG.show_reset_countdown,
 		show_balance:
 			typeof src.show_balance === "boolean"
 				? src.show_balance

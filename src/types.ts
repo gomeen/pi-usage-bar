@@ -135,6 +135,8 @@ export interface UsageBarConfig {
 	providerMap: Record<string, string | { type: "relay" }>;
 	refresh_minutes: number;
 	show_resets: boolean;
+	/** Per-window reset countdowns (⏰ / "resets …") — off by default. */
+	show_reset_countdown: boolean;
 	show_balance: boolean;
 	currency: string;
 }
@@ -150,10 +152,11 @@ export const DEFAULT_CONFIG: UsageBarConfig = {
 	color_hot: "",
 	warning_threshold: 30,
 	critical_threshold: 70,
-	display: { mode: "active", providers: [] },
+	display: { mode: "all", providers: [] },
 	providerMap: {},
 	refresh_minutes: 2,
 	show_resets: true,
+	show_reset_countdown: false,
 	show_balance: true,
 	currency: "$",
 };

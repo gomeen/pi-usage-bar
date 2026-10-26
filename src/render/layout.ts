@@ -111,7 +111,7 @@ function auroraWindow(
 	} else {
 		out += ` ${fg(sev ?? palette.ink)}${BOLD}${String(Math.round(w.percent)).padStart(2, " ")}%${RESET}`;
 	}
-	if (w.resetsAt !== null) {
+	if (config.show_reset_countdown && w.resetsAt !== null) {
 		out += ` ${fg(palette.edge)}⏰${fg(palette.mute)}${formatCountdown(w.resetsAt, now, w.durationSeconds, w.label)}${RESET}`;
 	}
 	return out;
@@ -135,7 +135,7 @@ function ringWindow(
 			? `${fg(palette.mute)}--%${RESET}`
 			: `${fg(palette.ink)}${BOLD}${Math.round(w.percent)}%${RESET}`;
 	const reset =
-		w.resetsAt === null
+		w.resetsAt === null || !config.show_reset_countdown
 			? ""
 			: ` · resets ${formatCountdown(w.resetsAt, now, w.durationSeconds, w.label)}`;
 	return `${ringMark(w.percent, sev, palette)} ${pct} ${fg(palette.mute)}${w.label}${reset}${RESET}`;
@@ -157,7 +157,7 @@ function classicWindow(
 	const color = sev ?? palette.mute;
 	let out = fg(color) + w.label + RESET;
 	out += `${fg(palette.mute)}[${RESET}${classicBattery(w.percent, sev, palette)}${fg(palette.mute)}]${RESET}`;
-	if (w.resetsAt !== null) {
+	if (config.show_reset_countdown && w.resetsAt !== null) {
 		out += `${fg(color)}⏰${formatCountdown(w.resetsAt, now, w.durationSeconds, w.label)}${RESET}`;
 	}
 	return out;

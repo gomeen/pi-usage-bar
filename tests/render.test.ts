@@ -29,7 +29,7 @@ const TWO_H_15M_MS = 2 * 3_600_000 + 15 * 60_000;
 const THREE_D_04H_MS = 3 * 86_400_000 + 4 * 3_600_000;
 
 function cfg(): UsageBarConfig {
-	return { ...DEFAULT_CONFIG };
+	return { ...DEFAULT_CONFIG, show_reset_countdown: true };
 }
 
 function snap(): UsageSnapshot {
@@ -628,4 +628,13 @@ describe("display semantics", () => {
 			"4sapi bal $200.00 │ Codex 5h ■■■■■■■■■■■■ 42% ⏰2h15m",
 		);
 	});
+});
+
+it("hides reset countdowns when show_reset_countdown is false (default)", () => {
+	const s = snap();
+	s.windows.push(win("5h", 42, NOW + TWO_H_15M_MS, 18000));
+	const lines = renderStatus([s], { ...DEFAULT_CONFIG }, 120, GRAPHITE, NOW);
+	expect(lines.length).toBeGreaterThan(0);
+	expect(strip(lines[0] ?? "")).not.toContain("⏰");
+	expect(strip(lines[0] ?? "")).not.toContain("resets ");
 });

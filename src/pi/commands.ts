@@ -129,6 +129,14 @@ const CATEGORIES: Category[] = [
 		},
 	},
 	{
+		label: "show_reset_countdown (⏰)",
+		values: () => ["true", "false"],
+		read: (c) => String(c.show_reset_countdown),
+		write: (c, v) => {
+			c.show_reset_countdown = v === "true";
+		},
+	},
+	{
 		label: "show_resets",
 		values: () => ["true", "false"],
 		read: (c) => String(c.show_resets),

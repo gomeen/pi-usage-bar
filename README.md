@@ -45,11 +45,12 @@ Everything lives in `~/.pi/agent/usage-bar.json` (sparse — only non-default ke
 | `bar_width` | `12` | bar cells |
 | `color_ok` / `color_warn` / `color_hot` | `""` | `#rrggbb` overrides |
 | `warning_threshold` / `critical_threshold` | `30` / `70` | percent |
-| `display.mode` | `"active"` | `active` \| `all` (all configured plans) |
+| `display.mode` | `"all"` | `active` (current model's plan) \| `all` (every configured plan) |
 | `display.providers` | `[]` | plan filter for `all` mode |
 | `providerMap` | `{}` | custom id → plan, e.g. `{"cc-switch-zhipu-glm": "zai-cn"}` or `{"my-relay": {"type": "relay"}}` |
 | `refresh_minutes` | `2` | poll interval |
 | `show_resets` | `true` | codex-resets.com announcements |
+| `show_reset_countdown` | `false` | per-window `⏰` reset countdowns |
 | `show_balance` | `true` | relay balance probe |
 | `currency` | `"$"` | balance unit |
 

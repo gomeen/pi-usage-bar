@@ -149,10 +149,9 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 		const controller = new AbortController();
 		state.inflight = controller;
 		try {
-			if (ctx.mode === "tui") {
-				publishFooter(ctx.ui as FooterUIContext, () => [
-					`\x1b[2m${planDisplayLabel("codex")} usage: loading…\x1b[22m`,
-				]);
+			if (ctx.mode === "tui" && state.snapshots.length === 0) {
+				// First fetch ever: stay quiet rather than flashing a loading
+				// line (issue: keep previous content during refreshes).
 			}
 			const targets =
 				state.config.display.mode === "all"
