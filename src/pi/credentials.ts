@@ -19,12 +19,17 @@ export interface RegistryLike {
 	>;
 }
 
-/**
- * Resolve a bearer credential for a provider id, following the documented
- * hknet flow: registry presence → auth status → auth result. Returns null for
- * unconfigured providers. The Bearer token may come from auth.apiKey or an
- * Authorization header (some OAuth flows only expose the header).
- */
+/** Try several provider ids in order; first configured credential wins. */
+export async function resolveCredentialAny(
+	registry: RegistryLike,
+	providers: readonly string[],
+): Promise<{ credential: ProviderCredential | null; source: string | null }> {
+	for (const id of providers) {
+		const credential = await resolveCredential(registry, id);
+		if (credential) return { credential, source: id };
+	}
+	return { credential: null, source: null };
+}
 export async function resolveCredential(
 	registry: RegistryLike,
 	provider: string,

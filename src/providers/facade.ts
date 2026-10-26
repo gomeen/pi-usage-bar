@@ -25,6 +25,14 @@ export interface FetchTarget {
 	plan: PlanKind;
 	/** Base URL — required for relay probes, optional for first-party plans. */
 	baseUrl?: string;
+	/**
+	 * Provider id to resolve the credential from, when it differs from
+	 * `provider`. Codex usage lives on chatgpt.com/backend-api, which only
+	 * accepts the openai-codex (backend-api audience) OAuth token — the
+	 * `openai` provider's ChatGPT direct-use token (aud api.openai.com/v1)
+	 * is rejected with 401 no_matching_rule (verified live 2026-10-26).
+	 */
+	credentialSource?: string;
 	credential: ProviderCredential | null;
 }
 
@@ -94,6 +102,13 @@ export async function fetchAllUsages(
 ): Promise<UsageSnapshot[]> {
 	const jobs = targets.map(async (target): Promise<UsageSnapshot> => {
 		if (!target.credential?.token) {
+			if (target.plan === "codex") {
+				return errorSnapshot(
+					target,
+					opts.now,
+					"unconfigured (run /login → OpenAI Codex)",
+				);
+			}
 			return errorSnapshot(target, opts.now, "unconfigured");
 		}
 		try {
