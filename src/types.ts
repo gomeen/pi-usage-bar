@@ -161,7 +161,7 @@ export const DEFAULT_CONFIG: UsageBarConfig = {
 	providerMap: {},
 	refresh_minutes: 2,
 	show_resets: true,
-	show_reset_countdown: false,
+	show_reset_countdown: true,
 	show_balance: true,
 	currency: "$",
 };

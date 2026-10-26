@@ -15,21 +15,43 @@ import type {
 import { auroraBar, classicBattery, ringMark } from "./bar";
 import { BOLD, FAINT, fg, RESET, severityColor, UNFAINT } from "./theme";
 
-/** Ink display name per plan; relay falls back to the provider id (e.g. "4sapi"). */
+/** Base display name per plan; relay falls back to the provider id (e.g. "4sapi"). */
 const PLAN_NAMES: Record<PlanKind, string> = {
 	codex: "Codex",
 	claude: "Claude",
 	zai: "ZAI",
-	"zai-cn": "ZAI CN",
+	"zai-cn": "ZAI",
 	minimax: "MiniMax",
-	"minimax-cn": "MiniMax CN",
+	"minimax-cn": "MiniMax",
 	relay: "Relay",
 };
 
 const DIM_AFTER_MS = 3_600_000;
 
-function displayName(snap: UsageSnapshot): string {
-	return snap.plan === "relay" ? snap.provider : PLAN_NAMES[snap.plan];
+/**
+ * Display name with regional suffix only when both twins are configured:
+ * "ZAI" alone when only zai-cn is present, "ZAI CN" when zai is too.
+ */
+function displayName(snap: UsageSnapshot, present: Set<PlanKind>): string {
+	if (snap.plan === "relay") {
+		return snap.provider;
+	}
+	const base = PLAN_NAMES[snap.plan];
+	const isCn = snap.plan === "zai-cn" || snap.plan === "minimax-cn";
+	if (!isCn) {
+		return base;
+	}
+	const twin = snap.plan === "zai-cn" ? "zai" : "minimax";
+	return present.has(twin) ? `${base} CN` : base;
+}
+
+/** Coarse countdown for compact rows: largest unit only ("5d", "2h", "37m"). */
+function coarseCountdown(resetsAt: number, now: number): string {
+	const total = Math.max(0, resetsAt - now);
+	const m = Math.floor(total / 60_000);
+	const h = Math.floor(m / 60);
+	const d = Math.floor(h / 24);
+	return d > 0 ? `${d}d` : h > 0 ? `${h}h` : `${m}m`;
 }
 
 /** Strip ANSI SGR sequences — the visible width of a string. */
@@ -230,11 +252,12 @@ function compactItem(
 	config: UsageBarConfig,
 	palette: Palette,
 	now: number,
+	present: Set<PlanKind>,
 ): string | null {
 	if (snap.status === "error") {
 		// Never vanish silently: a failing plan stays visible as a warning
 		// marker (last-good is normally served by the facade before this).
-		return `${fg(palette.mute)}${displayName(snap)}${RESET} ${fg(palette.warn)}⚠${RESET}`;
+		return `${fg(palette.mute)}${displayName(snap, present)}${RESET} ${fg(palette.warn)}⚠${RESET}`;
 	}
 	const bits: string[] = [];
 	for (const w of snap.windows) {
@@ -245,9 +268,11 @@ function compactItem(
 			config.warning_threshold,
 			config.critical_threshold,
 		);
-		bits.push(
-			`${fg(palette.mute)}${w.label}·${RESET}${fg(sev ?? palette.ink)}${Math.round(w.percent)}%${RESET}`,
-		);
+		let bit = `${fg(palette.mute)}${w.label}·${RESET}${fg(sev ?? palette.ink)}${Math.round(w.percent)}%${RESET}`;
+		if (config.show_reset_countdown && w.resetsAt !== null) {
+			bit += `${fg(palette.mute)}·${coarseCountdown(w.resetsAt, now)}${RESET}`;
+		}
+		bits.push(bit);
 	}
 	if (snap.balance !== undefined) {
 		bits.push(
@@ -257,7 +282,7 @@ function compactItem(
 	if (bits.length === 0) {
 		return null;
 	}
-	let item = `${fg(palette.mute)}${displayName(snap)}${RESET} ${bits.join(" ")}`;
+	let item = `${fg(palette.mute)}${displayName(snap, present)}${RESET} ${bits.join(" ")}`;
 	if (now - snap.fetchedAt > config.refresh_minutes * 3 * 60_000) {
 		item += ` ${fg(palette.mute)}⟳${RESET}`;
 	}
@@ -271,6 +296,7 @@ function renderSegment(
 	now: number,
 	multi: boolean,
 	nameWidth: number,
+	present: Set<PlanKind>,
 ): string | null {
 	const parts: string[] = [];
 	if (snap.status === "error") {
@@ -305,7 +331,7 @@ function renderSegment(
 	}
 	if (multi || snap.status === "error") {
 		// Equal-width names keep the bars vertically aligned across lines.
-		const name = displayName(snap).padEnd(nameWidth, " ");
+		const name = displayName(snap, present).padEnd(nameWidth, " ");
 		seg = `${fg(palette.ink)}${name}${RESET} ${seg}`;
 	}
 	if (age > DIM_AFTER_MS) {
@@ -357,8 +383,24 @@ export function renderStatus(
 			return [];
 		}
 		const rest = visible.filter((s) => s !== activeSnap);
-		const activeSeg = renderSegment(activeSnap, config, palette, now, false, 0);
-		const items = rest.map((s) => compactItem(s, config, palette, now));
+		const present = new Set(visible.map((s) => s.plan));
+		const nameWidth = Math.max(
+			...visible.map((s) => displayName(s, present).length),
+		);
+		// The active line carries its name too — an anonymous bar row reads
+		// as "not the current plan" even though it is.
+		const activeSeg = renderSegment(
+			activeSnap,
+			config,
+			palette,
+			now,
+			true,
+			nameWidth,
+			present,
+		);
+		const items = rest.map((s) =>
+			compactItem(s, config, palette, now, present),
+		);
 		const lines: string[] = [];
 		if (activeSeg !== null) {
 			lines.push(activeSeg);
@@ -373,12 +415,21 @@ export function renderStatus(
 			return lines;
 		}
 	}
+	const present = new Set(visible.map((s) => s.plan));
 	const nameWidth = multi
-		? Math.max(...visible.map((s) => displayName(s).length))
+		? Math.max(...visible.map((s) => displayName(s, present).length))
 		: 0;
 	const segments: string[] = [];
 	for (const snap of visible) {
-		const seg = renderSegment(snap, config, palette, now, multi, nameWidth);
+		const seg = renderSegment(
+			snap,
+			config,
+			palette,
+			now,
+			multi,
+			nameWidth,
+			present,
+		);
 		if (seg !== null) {
 			segments.push(seg);
 		}

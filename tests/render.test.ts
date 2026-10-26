@@ -630,10 +630,16 @@ describe("display semantics", () => {
 	});
 });
 
-it("hides reset countdowns when show_reset_countdown is false (default)", () => {
+it("hides reset countdowns when show_reset_countdown is false", () => {
 	const s = snap();
 	s.windows.push(win("5h", 42, NOW + TWO_H_15M_MS, 18000));
-	const lines = renderStatus([s], { ...DEFAULT_CONFIG }, 120, GRAPHITE, NOW);
+	const lines = renderStatus(
+		[s],
+		{ ...DEFAULT_CONFIG, show_reset_countdown: false },
+		120,
+		GRAPHITE,
+		NOW,
+	);
 	expect(lines.length).toBeGreaterThan(0);
 	expect(strip(lines[0] ?? "")).not.toContain("⏰");
 	expect(strip(lines[0] ?? "")).not.toContain("resets ");
@@ -661,5 +667,5 @@ it("compact mode: active full, others as one summary line", () => {
 	// active (zai) renders full with bars; codex collapses to name + percents
 	expect(l0).toContain("5h");
 	expect(l0).toContain("■");
-	expect(l1).toBe("Codex 5h·17% 7d·3%");
+	expect(l1).toBe("Codex 5h·17%·2h 7d·3%·3d");
 });

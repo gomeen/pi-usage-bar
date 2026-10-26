@@ -8,7 +8,7 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { FileCache } from "./cache.js";
 import { loadConfig, resolveEndpointOverrides } from "./config.js";
-import { detectRoute, PLAN_HOSTS, planDisplayLabel } from "./detect.js";
+import { detectRoute, PLAN_HOSTS } from "./detect.js";
 import { runConfigCommand, runUsageCommand } from "./pi/commands.js";
 import {
 	type RegistryLike,
