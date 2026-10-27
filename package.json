@@ -14,10 +14,12 @@
 	"pi": {
 		"extensions": [
 			"./src/index.ts"
-		]
+		],
+		"image": "./docs/preview.png"
 	},
 	"files": [
 		"src",
+		"docs",
 		"README.md",
 		"README.zh.md",
 		"LICENSE"
