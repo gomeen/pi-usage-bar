@@ -1,6 +1,6 @@
 {
 	"name": "@gomeen/pi-usage-bar",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Subscription plan usage bars for the Pi coding agent: Codex, Claude, ZAI, MiniMax quota windows with reset countdowns, relay balances, and official reset announcements. Styled after claude-code-usage-bar.",
 	"license": "MIT",
 	"type": "module",
