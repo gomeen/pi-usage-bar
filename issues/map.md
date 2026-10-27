@@ -41,6 +41,7 @@ status: open
 - [Config schema and slash command surface](009-config-schema-slash-commands.md): 单一全局 `~/.pi/agent/usage-bar.json` 稀疏写入；16 键全量键表定稿；后续按用户反馈合并为 `/usage` 单入口，一级菜单直接列 Usage details / Appearance / Display / Advanced，去掉中间 Settings 层，修改直接作用于实际用量条，移除重复 Preview 区域，样式对比保留且 ↑↓ 即保存，Bar style 为唯一样式入口，providerMap 配置说明收进 Advanced，分类摘要使用可读名称和单位；`--usage` 一行 JSON 永不含凭据。
 - [Robustness spec](014-robustness-spec.md): Claude 按 Retry-After 退避、其他家 1→5→15 分钟；stale=3 倍刷新间隔标⟳、超 1 小时变暗；多进程共享缓存+锁；MiniMax reset 三级兜底绝不编造；每家错误隔离。
 - [Release process](015-release-process.md): 包名 `@gomeen/pi-usage-bar`（裸名已被占）；`pi-package` 关键字进 pi.dev/packages 画廊；发版全自动（tag→CI→publish，需 NPM_TOKEN secret）；README.md 英文 + README.zh.md 中文互链，致谢带仓库链接。
+- [Trusted publishing (OIDC) migration](016-trusted-publishing-migration.md): 修订 015 的 token 路线（write token 7 天过期、bypass-2FA token 2026-08 起不能做账号治理、2027-01 起不能直接发布）→ 改 OIDC 可信发布，发版仍是 tag→CI→publish 全自动；首次发布交互式 2FA（包须先存在才能配 Trusted Publisher）；npm 12 安装期默认变更对本包无影响；Trusted Publisher 配好后 2 天内须完成首次发布；2FA 只剩 WebAuthn 一条路。
 
 ## Not yet specified
 
