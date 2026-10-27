@@ -3,8 +3,22 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
 import { FileCache } from "../../src/cache";
-import { probeRelayBalance } from "../../src/providers/relay";
-import type { FetchLike, FetchOpts } from "../../src/types";
+import {
+	probeRelayBalance as probeBalance,
+	relayCacheKey,
+} from "../../src/providers/relay";
+import type { FetchLike, FetchOpts, ProviderCredential } from "../../src/types";
+
+/** The probe runs as a pi provider id; the host is derived from the base URL. */
+const PROVIDER = "relay-test";
+
+function probeRelayBalance(
+	baseUrl: string,
+	cred: ProviderCredential,
+	opts: FetchOpts & { cache: FileCache },
+): ReturnType<typeof probeBalance> {
+	return probeBalance(baseUrl, PROVIDER, cred, opts);
+}
 
 const NOW = Date.UTC(2026, 9, 26, 12, 0, 0); // 2026-10-26T12:00:00Z
 const MIN = 60_000;
@@ -69,6 +83,7 @@ function opts(
 
 const SUB = "/v1/dashboard/billing/subscription";
 const USAGE = "/v1/dashboard/billing/usage";
+const SITE_USAGE = "/v1/usage";
 
 describe("probeRelayBalance", () => {
 	it("computes remaining from subscription and usage endpoints", async () => {
@@ -87,7 +102,7 @@ describe("probeRelayBalance", () => {
 			opts(cache, fetchImpl),
 		);
 		expect(snap).toEqual({
-			provider: "api.4sapi.com",
+			provider: PROVIDER,
 			plan: "relay",
 			windows: [],
 			balance: { kind: "relay", amount: 58 },
@@ -99,13 +114,13 @@ describe("probeRelayBalance", () => {
 			"https://api.4sapi.com/v1/dashboard/billing/usage?start_date=2026-07-18&end_date=2026-10-26",
 		]);
 		expect(log.every((c) => c.auth === "Bearer sk-relay-test")).toBe(true);
-		expect(cache.get("relay:api.4sapi.com")).toEqual({
+		expect(cache.get(relayCacheKey("api.4sapi.com", cred.token))).toEqual({
 			data: { amount: 58 },
 			fetchedAt: NOW,
 		});
 	});
 
-	it("returns a 'no billing endpoint' error snapshot on first 404", async () => {
+	it("returns a 'no billing endpoint' error snapshot when both families miss", async () => {
 		const cache = newCache();
 		const log: Call[] = [];
 		const fetchImpl = router({ "*": () => res(404, "not found") }, log);
@@ -117,9 +132,12 @@ describe("probeRelayBalance", () => {
 		expect(snap.status).toBe("error");
 		expect(snap.error).toBe("no billing endpoint");
 		expect(snap.plan).toBe("relay");
-		expect(snap.provider).toBe("relay.example.com");
+		expect(snap.provider).toBe(PROVIDER);
 		expect(snap.balance).toBeUndefined();
-		expect(log).toHaveLength(1); // usage endpoint never probed
+		expect(log.map((c) => c.url)).toEqual([
+			"https://relay.example.com/v1/dashboard/billing/subscription",
+			"https://relay.example.com/v1/usage",
+		]);
 	});
 
 	it("keeps the last good amount when the endpoint later 404s", async () => {
@@ -217,7 +235,9 @@ describe("probeRelayBalance", () => {
 		expect(snap.status).toBe("ok");
 		expect(snap.balance?.amount).toBe(50);
 		expect(snap.fetchedAt).toBe(NOW);
-		expect(cache.get("relay:relay.example.com")?.data).toEqual({ amount: 50 });
+		expect(
+			cache.get(relayCacheKey("relay.example.com", cred.token))?.data,
+		).toEqual({ amount: 50 });
 	});
 
 	it("keeps the last amount on network errors", async () => {
@@ -291,7 +311,7 @@ describe("probeRelayBalance", () => {
 			const cache = newCache();
 			const fetchImpl = router({
 				[SUB]: () => res(200, body),
-				[USAGE]: () => res(200, '{"total_usage": 0}'),
+				[SITE_USAGE]: () => res(404, "not found"),
 			});
 			const snap = await probeRelayBalance(
 				"https://relay.example.com",
@@ -301,6 +321,96 @@ describe("probeRelayBalance", () => {
 			expect(snap.status).toBe("error");
 			expect(snap.error).toBe("no billing endpoint");
 		}
+	});
+
+	it("falls back to the site usage endpoint when the dashboard family is absent", async () => {
+		const cache = newCache();
+		const log: Call[] = [];
+		const fetchImpl = router(
+			{
+				[SUB]: () => res(404, "not found"),
+				[SITE_USAGE]: () =>
+					res(200, '{"balance": 4676.45635632, "isValid": true}'),
+			},
+			log,
+		);
+		const snap = await probeRelayBalance(
+			"https://ai.yuchuantest.com/v1",
+			cred,
+			opts(cache, fetchImpl),
+		);
+		expect(snap.status).toBe("ok");
+		expect(snap.balance).toEqual({ kind: "relay", amount: 4676.45635632 });
+		expect(snap.provider).toBe(PROVIDER);
+		expect(log.map((c) => c.url)).toEqual([
+			"https://ai.yuchuantest.com/v1/dashboard/billing/subscription",
+			"https://ai.yuchuantest.com/v1/usage",
+		]);
+		expect(log.every((c) => c.auth === "Bearer sk-relay-test")).toBe(true);
+		expect(
+			cache.get(relayCacheKey("ai.yuchuantest.com", cred.token))?.data,
+		).toEqual({
+			amount: 4676.45635632,
+		});
+	});
+
+	it("appends /v1/usage when the base URL has no /v1 suffix", async () => {
+		const cache = newCache();
+		const log: Call[] = [];
+		const fetchImpl = router(
+			{
+				[SITE_USAGE]: () => res(200, '{"balance": 88}'),
+				"*": () => res(404, "not found"),
+			},
+			log,
+		);
+		const snap = await probeRelayBalance(
+			"https://relay.example.com",
+			cred,
+			opts(cache, fetchImpl),
+		);
+		expect(snap.status).toBe("ok");
+		expect(snap.balance?.amount).toBe(88);
+		expect(log.map((c) => c.url)).toEqual([
+			"https://relay.example.com/v1/dashboard/billing/subscription",
+			"https://relay.example.com/v1/usage",
+		]);
+	});
+
+	it("reads remaining and quota shapes from the site usage endpoint", async () => {
+		for (const [body, amount] of [
+			['{"remaining": 120.5}', 120.5],
+			['{"quota": {"limit": 200, "used": 50}}', 150],
+		] as const) {
+			const cache = newCache();
+			const fetchImpl = router({
+				[SITE_USAGE]: () => res(200, body),
+				"*": () => res(404, "not found"),
+			});
+			const snap = await probeRelayBalance(
+				"https://relay.example.com",
+				cred,
+				opts(cache, fetchImpl),
+			);
+			expect(snap.status).toBe("ok");
+			expect(snap.balance?.amount).toBe(amount);
+		}
+	});
+
+	it("reports an unavailable key instead of a balance when isValid is false", async () => {
+		const cache = newCache();
+		const fetchImpl = router({
+			[SITE_USAGE]: () => res(200, '{"isValid": false}'),
+			"*": () => res(404, "not found"),
+		});
+		const snap = await probeRelayBalance(
+			"https://relay.example.com",
+			cred,
+			opts(cache, fetchImpl),
+		);
+		expect(snap.status).toBe("error");
+		expect(snap.error).toBe("unavailable");
+		expect(snap.balance).toBeUndefined();
 	});
 
 	it("never throws on an unparseable baseUrl", async () => {

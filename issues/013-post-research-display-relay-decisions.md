@@ -31,7 +31,7 @@ blocked-by: []
 
 **中转站余额：v1 纳入，方案 B 自动探测**（实测背书：4sapi 全通，$200.00 剩 29%；h-company 404 静默隐藏）：
 - 当前激活 provider 不属于四家官方 plan 且未被 providerMap 显式映射 → 自动探其 baseUrl 的 `/v1/dashboard/billing/subscription` + `/usage`（one-api/new-api 事实标准）
-- `剩余 = hard_limit_usd − total_usage/100`；无 limit 退化为纯文本 `bal $809.97`
+- `剩余 = hard_limit_usd − total_usage/100`；无 limit 退化为纯文本 `$809.97`
 - 404/不存在 → 探测一次即缓存"此站无计费端点"，永不再试；失败保留上次有效值 + `⟳` 标记；成功缓存 5 分钟
 - 显示：油表条 `bal[████ 29%] $200.00`（remaining% 绿→黄 ≤25%→红 ≤10%）或纯文本（`balance_bar` 配置）
 - 货币默认 `$` 可配（部分站 CNY 计价）；全局开关 `show_balance`（默认开）

@@ -32,6 +32,7 @@ import {
 	applyColorOverrides,
 	GRAPHITE as GRAPHITE_FALLBACK,
 } from "./render/theme.js";
+import { selectSnapshots } from "./select.js";
 import type {
 	Palette,
 	PlanKind,
@@ -190,20 +191,13 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 					})
 				: [];
 			if (controller.signal.aborted) return;
-			// One snapshot per plan: all-mode candidates can overlap (the
-			// `openai` and `openai-codex` providers both map to codex). The
-			// active provider's snapshot wins so the full first line always
-			// describes the plan the current model actually spends.
+			// One snapshot per official plan: all-mode candidates can overlap
+			// (the `openai` and `openai-codex` providers both map to codex).
+			// The active provider's snapshot wins so the full first line always
+			// describes the plan the current model actually spends. Relays are
+			// one-per-provider: each is its own account with its own balance.
 			const activeProviderId = ctx.model?.provider ?? "";
-			const byPlan = new Map<PlanKind, UsageSnapshot>();
-			for (const snap of snapshots) {
-				if (snap.provider === activeProviderId) {
-					byPlan.set(snap.plan, snap);
-					continue;
-				}
-				if (!byPlan.has(snap.plan)) byPlan.set(snap.plan, snap);
-			}
-			state.snapshots = [...byPlan.values()];
+			state.snapshots = selectSnapshots(snapshots, activeProviderId);
 			render();
 		} finally {
 			if (state.inflight === controller) state.inflight = undefined;

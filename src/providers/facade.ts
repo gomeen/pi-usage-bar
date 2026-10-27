@@ -5,6 +5,7 @@
  */
 
 import type { FileCache } from "../cache.js";
+import { snapshotKey } from "../select.js";
 import type {
 	FetchOpts,
 	PlanKind,
@@ -44,8 +45,12 @@ export interface FacadeOpts extends FetchOpts {
 
 const adapterCache = new Map<string, ProviderAdapter>();
 
-/** Issue 014: keep the last good snapshot per plan across failed polls. */
-const lastGood = new Map<PlanKind, UsageSnapshot>();
+/**
+ * Issue 014: keep the last good snapshot per slot across failed polls.
+ * Official plans share one slot per plan; relays get one slot per provider
+ * so a failing relay never serves another relay's balance.
+ */
+const lastGood = new Map<string, UsageSnapshot>();
 
 /**
  * Issue 014: escalating backoff per plan on 429s — 1 → 5 → 15 min.
@@ -57,7 +62,7 @@ export function nextBackoffMs(consecutive429s: number): number {
 	return (minutes[idx] ?? 1) * 60_000;
 }
 
-const backoff = new Map<PlanKind, { until: number; hits: number }>();
+const backoff = new Map<string, { until: number; hits: number }>();
 
 function adapterFor(plan: PlanKind, provider: string): ProviderAdapter | null {
 	switch (plan) {
@@ -127,11 +132,11 @@ export async function fetchAllUsages(
 			return errorSnapshot(target, opts.now, "unconfigured");
 		}
 		// Backoff window active: serve last-good instead of hammering.
-		const bo = backoff.get(target.plan);
+		const slot = snapshotKey(target.plan, target.provider);
+		const bo = backoff.get(slot);
 		if (bo && opts.now < bo.until) {
 			return (
-				lastGood.get(target.plan) ??
-				errorSnapshot(target, opts.now, "cooling down")
+				lastGood.get(slot) ?? errorSnapshot(target, opts.now, "cooling down")
 			);
 		}
 		try {
@@ -139,7 +144,12 @@ export async function fetchAllUsages(
 				if (!target.baseUrl) {
 					return errorSnapshot(target, opts.now, "no billing endpoint");
 				}
-				return await probeRelayBalance(target.baseUrl, target.credential, opts);
+				return await probeRelayBalance(
+					target.baseUrl,
+					target.provider,
+					target.credential,
+					opts,
+				);
 			}
 			const adapter = adapterFor(target.plan, target.provider);
 			if (!adapter) {
@@ -158,13 +168,14 @@ export async function fetchAllUsages(
 	// escalates it. Last-good snapshots are served in place of hard errors so
 	// a transient failure never makes a plan vanish from the bar.
 	for (const snap of snapshots) {
+		const slot = snapshotKey(snap.plan, snap.provider);
 		if (snap.status === "ok") {
-			lastGood.set(snap.plan, snap);
-			backoff.delete(snap.plan);
+			lastGood.set(slot, snap);
+			backoff.delete(slot);
 		} else if (snap.error?.includes("429")) {
-			const prev = backoff.get(snap.plan);
+			const prev = backoff.get(slot);
 			const hits = (prev?.hits ?? 0) + 1;
-			backoff.set(snap.plan, {
+			backoff.set(slot, {
 				until: opts.now + nextBackoffMs(hits),
 				hits,
 			});
@@ -175,17 +186,20 @@ export async function fetchAllUsages(
 			snap.status === "error" &&
 			!(snap.error ?? "").startsWith("no billing")
 		) {
-			return lastGood.get(snap.plan) ?? snap;
+			return lastGood.get(snapshotKey(snap.plan, snap.provider)) ?? snap;
 		}
 		return snap;
 	});
 
-	if (opts.showResets) {
+	if (opts.showResets && targets.some((t) => t.plan === "codex")) {
 		try {
 			const announcement = await fetchResetAnnouncement(opts);
 			if (announcement) {
 				for (const s of presented) {
-					if (s.plan === "codex" && s.status === "ok") {
+					// The announcement is an independent data source: it stays
+					// visible even when the Codex usage fetch failed (the
+					// error segment then carries it).
+					if (s.plan === "codex") {
 						s.announcement = announcement;
 						break;
 					}

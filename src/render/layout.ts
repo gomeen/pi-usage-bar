@@ -217,7 +217,7 @@ function windowPart(
 	}
 }
 
-/** Balance text (issue 013): relay `bal $200.00`; credits `$12.50 credits`. */
+/** Balance text (issue 013): relay `$200.00`; credits `$12.50 credits`. */
 function balancePart(
 	snap: UsageSnapshot,
 	config: UsageBarConfig,
@@ -228,23 +228,47 @@ function balancePart(
 		return null;
 	}
 	if (bal.kind === "relay") {
-		return `${fg(palette.ok)}bal ${config.currency}${bal.amount.toFixed(2)}${RESET}`;
+		return `${fg(palette.ok)}${config.currency}${bal.amount.toFixed(2)}${RESET}`;
 	}
 	return `${fg(palette.ok)}${config.currency}${bal.amount.toFixed(2)} credits${RESET}`;
 }
 
-/** ↻ official reset announcement appended to the codex segment (issues 012/013).
- *  The snapshot text is pre-formatted (chancePercent already inside it). */
-function announcementPart(
-	snap: UsageSnapshot,
+/** ↻ next-reset announcement (issues 012/013). The text is pre-formatted. */
+function announcementPart(text: string, palette: Palette): string {
+	return `${fg(palette.ink)}↻${RESET} ${fg(palette.mute)}${text}${RESET}`;
+}
+
+/**
+ * The announcement belongs to the Codex plan, but it answers a question about
+ * the next reset — so it must not disappear when Codex is not the segment
+ * that happens to be drawn: it rides the Codex segment on whichever line that
+ * lands (first or second), and stands alone when Codex has no segment at all.
+ *
+ * Resolution and placement agree on one owner: the Codex snapshot. Anything
+ * else carrying an announcement would be a bug, not a second source.
+ */
+interface AnnouncementWording {
+	/** Full wording: "Reset announced · in 1h10m". */
+	full: string;
+	/**
+	 * Compact wording for a secondary row: "in 1h10m". A forecast has no
+	 * compact form — it keeps the full wording on every row.
+	 */
+	short: string;
+}
+
+function announcementWording(
+	snapshots: readonly UsageSnapshot[],
 	config: UsageBarConfig,
-	palette: Palette,
-): string | null {
-	const ann = snap.announcement;
-	if (ann === undefined || !config.show_resets) {
+): AnnouncementWording | null {
+	if (!config.show_resets) {
 		return null;
 	}
-	return `${fg(palette.ink)}↻${RESET} ${fg(palette.mute)}${ann.text}${RESET}`;
+	const ann = snapshots.find((s) => s.plan === "codex")?.announcement;
+	if (ann === undefined) {
+		return null;
+	}
+	return { full: ann.text, short: ann.shortText ?? ann.text };
 }
 
 /** Would this snapshot render anything (windows, balance, announcement, error)? */
@@ -269,6 +293,7 @@ function compactItem(
 	palette: Palette,
 	now: number,
 	present: Set<PlanKind>,
+	announcement: string | null = null,
 ): string | null {
 	if (snap.status === "error") {
 		// Never vanish silently: a failing plan stays visible as a warning
@@ -295,10 +320,18 @@ function compactItem(
 			`${fg(palette.ok)}${config.currency}${snap.balance.amount.toFixed(2)}${RESET}`,
 		);
 	}
-	if (bits.length === 0) {
+	if (bits.length === 0 && announcement === null) {
 		return null;
 	}
-	let item = `${fg(palette.mute)}${displayName(snap, present)}${RESET} ${bits.join(" ")}`;
+	let item = `${fg(palette.mute)}${displayName(snap, present)}${RESET}`;
+	if (bits.length > 0) {
+		item += ` ${bits.join(" ")}`;
+	}
+	// The announcement stays with its plan even in the compact summary line —
+	// dropping it here is what made the next reset invisible on line two.
+	if (announcement !== null) {
+		item += ` ${announcementPart(announcement, palette)}`;
+	}
 	if (now - snap.fetchedAt > config.refresh_minutes * 3 * 60_000) {
 		item += ` ${fg(palette.mute)}⟳${RESET}`;
 	}
@@ -330,15 +363,11 @@ function renderSegment(
 			parts.push(bal);
 		}
 	}
-	const ann = announcementPart(snap, config, palette);
-	if (parts.length === 0 && ann === null) {
+	if (parts.length === 0) {
 		return null;
 	}
 	const sep = separator(config, palette);
-	let seg = parts.length > 0 ? parts.join(sep) : "";
-	if (ann !== null) {
-		seg += `${seg.length > 0 ? " " : ""}${ann}`;
-	}
+	let seg = parts.join(sep);
 	// Stale marking (issue 014): ⟳ past 3× the refresh interval; the whole
 	// segment is dimmed past one hour (⟳ included in the dim wrap).
 	const age = now - snap.fetchedAt;
@@ -395,6 +424,11 @@ export function renderStatus(
 		return [];
 	}
 	const multi = visible.length > 1;
+	// One announcement for the whole bar: the next Codex reset, whenever the
+	// Codex segment itself is drawn (first line, second line, or compact
+	// summary line). The full wording belongs on the first row; a secondary
+	// row gets the compact wording so it does not eat the row's width.
+	const announcement = announcementWording(visible, config);
 
 	// Compact mode: the active provider renders full, everyone else collapses
 	// onto one summary line ({name} {p}%·{p}% / {name} $bal).
@@ -428,12 +462,28 @@ export function renderStatus(
 			0,
 			present,
 		);
+		// The announcement belongs to the Codex plan: it rides the active row
+		// when Codex is active (row one → full wording), otherwise the Codex
+		// item of the summary line (row two → compact wording).
 		const items = rest.map((s) =>
-			compactItem(s, config, palette, now, present),
+			compactItem(
+				s,
+				config,
+				palette,
+				now,
+				present,
+				s.plan === "codex" ? (announcement?.short ?? null) : null,
+			),
 		);
 		const lines: string[] = [];
-		if (activeSeg !== null) {
-			lines.push(activeSeg);
+		const activeLine =
+			activeSeg === null
+				? null
+				: activeSnap.plan === "codex" && announcement !== null
+					? `${activeSeg} ${announcementPart(announcement.full, palette)}`
+					: activeSeg;
+		if (activeLine !== null) {
+			lines.push(activeLine);
 		}
 		const summary = items
 			.filter((i) => i !== null)
@@ -449,7 +499,7 @@ export function renderStatus(
 	const nameWidth = multi
 		? Math.max(...visible.map((s) => displayName(s, present).length))
 		: 0;
-	const segments: string[] = [];
+	const base: { snap: UsageSnapshot; text: string }[] = [];
 	for (const snap of visible) {
 		const seg = renderSegment(
 			snap,
@@ -461,31 +511,92 @@ export function renderStatus(
 			present,
 		);
 		if (seg !== null) {
-			segments.push(seg);
+			base.push({ snap, text: seg });
 		}
 	}
 	const sep = separator(config, palette);
-	const line = segments.join(sep);
-	if (visibleWidth(line) <= width) {
-		return [line];
+	const codexIndex = base.findIndex((b) => b.snap.plan === "codex");
+
+	// Attach the announcement to the Codex segment (it rides whichever row
+	// that segment lands on); when Codex has no segment of its own the
+	// announcement stands alone rather than vanishing with it.
+	const layoutWith = (text: string | null) => {
+		const segs = base.map((b, i) => {
+			if (text === null || i !== codexIndex) {
+				return b.text;
+			}
+			// A stale segment is dimmed as a whole (issue 014); the
+			// announcement rides along inside that dim, not outside it.
+			const part = announcementPart(text, palette);
+			const dimmed =
+				now - b.snap.fetchedAt > DIM_AFTER_MS ? FAINT + part + UNFAINT : part;
+			return `${b.text} ${dimmed}`;
+		});
+		if (text !== null && codexIndex === -1) {
+			segs.push(announcementPart(text, palette));
+		}
+		return wrapSegments(segs, sep, width);
+	};
+
+	if (announcement === null) {
+		return layoutWith(null).lines;
 	}
+	// The announcement's own width can push Codex onto a later row, so the
+	// wording is chosen from the layout it actually produces:
+	//   • Codex on the first row → full wording;
+	//   • Codex on a later row   → compact wording;
+	//   • the announcement stands alone (no Codex segment) → always full,
+	//     because a lone "↻ in 1h10m" without its label says nothing.
+	// When the full wording does not fit the first row, the compact wording
+	// wins over moving Codex down a row — the segment keeps its place.
+	const withFull = layoutWith(announcement.full);
+	const announcementIndex = codexIndex === -1 ? base.length : codexIndex;
+	const row = withFull.groups.findIndex((g) => g.includes(announcementIndex));
+	if (codexIndex === -1) {
+		return withFull.lines;
+	}
+	if (row <= 0) {
+		return withFull.lines;
+	}
+	return layoutWith(announcement.short).lines;
+}
+
+/**
+ * Pack segments into rows, breaking at provider boundaries. `groups` maps
+ * each row to the segment indices it holds, so the caller can tell which row
+ * a given segment ended up on.
+ */
+function wrapSegments(
+	segments: string[],
+	sep: string,
+	width: number,
+): { lines: string[]; groups: number[][] } {
 	const lines: string[] = [];
+	const groups: number[][] = [];
 	let current = "";
-	for (const seg of segments) {
+	let currentGroup: number[] = [];
+	segments.forEach((seg, index) => {
 		if (current === "") {
 			current = seg;
-		} else if (
+			currentGroup = [index];
+			return;
+		}
+		if (
 			visibleWidth(current) + visibleWidth(sep) + visibleWidth(seg) <=
 			width
 		) {
 			current += sep + seg;
-		} else {
-			lines.push(current);
-			current = seg;
+			currentGroup.push(index);
+			return;
 		}
-	}
+		lines.push(current);
+		groups.push(currentGroup);
+		current = seg;
+		currentGroup = [index];
+	});
 	if (current !== "") {
 		lines.push(current);
+		groups.push(currentGroup);
 	}
-	return lines;
+	return { lines, groups };
 }

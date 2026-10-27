@@ -8,8 +8,8 @@ Subscription plan usage bars for the [Pi](https://github.com/earendil-works/pi) 
 
 - **Footer usage bars** for the plan of your active model — two quota windows (session + weekly) with per-cell gradient bars and `⏰` reset countdowns
 - **Four looks**: aurora block (default), aurora thin, ring (`◔ 14% 5h · resets 1h07m`), and classic battery — all switchable live
-- **Relay balances**: custom providers on one-api/new-api relays automatically show their remaining balance (`bal $200.00`)
-- **Official reset announcements** for Codex plans via [codex-resets.com](https://codex-resets.com) (`↻ Official reset · 21h ago`)
+- **Relay balances**: custom providers on one-api/new-api relays — or Sub2API-style sites exposing `/v1/usage` — automatically show their remaining balance (`$200.00`)
+- **Next official reset** for Codex plans via [codex-resets.com](https://codex-resets.com) — shown only while a reset is announced ahead of time (`↻ Reset announced · in 1h10m`)
 - **`/usage`** opens a single menu for provider details, **Appearance**, **Display**, and **Advanced**, with changes applied to the actual usage bar; **`--usage`** prints a one-line JSON smoke test
 
 ## Supported plans
@@ -20,9 +20,9 @@ Subscription plan usage bars for the [Pi](https://github.com/earendil-works/pi) 
 | Anthropic Claude | `anthropic` | Claude Pro/Max OAuth |
 | ZAI Coding Plan (Global/China) | `zai`, `zai-coding-cn` | API key |
 | MiniMax Token Plan (Global/China) | `minimax`, `minimax-cn` | API key |
-| Relays (one-api/new-api) | any custom provider id | API key |
+| Relays (one-api/new-api, Sub2API-style `/v1/usage`) | any custom provider id | API key |
 
-Custom provider ids (proxies, cc-switch entries) are auto-probed for relay billing endpoints; map them to a plan explicitly with `providerMap`.
+Custom provider ids (proxies, cc-switch entries) are auto-probed for relay billing endpoints — the one-api/new-api dashboard family first, then a Sub2API-style `{site}/v1/usage` fallback; map them to a plan explicitly with `providerMap`.
 
 ## Install
 

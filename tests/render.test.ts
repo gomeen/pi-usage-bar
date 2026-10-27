@@ -29,7 +29,9 @@ const TWO_H_15M_MS = 2 * 3_600_000 + 15 * 60_000;
 const THREE_D_04H_MS = 3 * 86_400_000 + 4 * 3_600_000;
 
 function cfg(): UsageBarConfig {
-	return { ...DEFAULT_CONFIG, show_reset_countdown: true };
+	// Deep clone: `display` holds nested objects, and a shallow copy would
+	// let one test's `display.compact_others = false` leak into the next.
+	return { ...structuredClone(DEFAULT_CONFIG), show_reset_countdown: true };
 }
 
 function snap(): UsageSnapshot {
@@ -392,13 +394,13 @@ describe("error and relay segments", () => {
 // ---------------------------------------------------------------------------
 
 describe("balance and announcement", () => {
-	it("renders a relay balance as 'bal $200.00' with no name when alone", () => {
+	it("renders a relay balance as '$200.00' with no name when alone", () => {
 		const s = snap();
 		s.provider = "4sapi";
 		s.plan = "relay";
 		s.balance = { kind: "relay", amount: 200 };
 		expect(renderStatus([s], cfg(), 200, GRAPHITE, NOW)).toEqual([
-			`${fg(GRAPHITE.ok)}bal $200.00${RESET}`,
+			`${fg(GRAPHITE.ok)}$200.00${RESET}`,
 		]);
 	});
 
@@ -430,20 +432,24 @@ describe("balance and announcement", () => {
 		s.plan = "relay";
 		s.balance = { kind: "relay", amount: 352 };
 		const lines = renderStatus([s], c, 200, GRAPHITE, NOW);
-		expect(strip(lines[0] ?? "")).toBe("bal ¥352.00");
+		expect(strip(lines[0] ?? "")).toBe("¥352.00");
 	});
 
 	it("appends the ↻ announcement after a space, text verbatim", () => {
 		const c = cfg();
 		const s = snap();
 		s.windows = [win("5h", 42, NOW + TWO_H_15M_MS, 18_000)];
-		s.announcement = { kind: "scheduled", text: "in 2d14h" };
+		s.announcement = {
+			kind: "scheduled",
+			text: "Reset announced · in 1h10m",
+			shortText: "in 1h10m",
+		};
 		expect(renderStatus([s], c, 200, GRAPHITE, NOW)).toEqual([
 			aurora42(c) +
 				" " +
 				`${fg(GRAPHITE.ink)}↻${RESET}` +
 				" " +
-				`${fg(GRAPHITE.mute)}in 2d14h${RESET}`,
+				`${fg(GRAPHITE.mute)}Reset announced · in 1h10m${RESET}`,
 		]);
 	});
 
@@ -452,11 +458,14 @@ describe("balance and announcement", () => {
 		s.windows = [win("5h", 42, NOW + TWO_H_15M_MS, 18_000)];
 		s.announcement = {
 			kind: "watch",
-			text: "~75% chance · in 2d14h",
+			text: "AI forecast · reset possible (75%)",
+			shortText: "forecast 75%",
 			chancePercent: 75,
 		};
 		const lines = renderStatus([s], cfg(), 200, GRAPHITE, NOW);
-		expect(strip(lines[0] ?? "")).toContain("↻ ~75% chance · in 2d14h");
+		expect(strip(lines[0] ?? "")).toContain(
+			"↻ AI forecast · reset possible (75%)",
+		);
 	});
 
 	it("hides the announcement when show_resets is off", () => {
@@ -464,9 +473,157 @@ describe("balance and announcement", () => {
 		c.show_resets = false;
 		const s = snap();
 		s.windows = [win("5h", 42, NOW + TWO_H_15M_MS, 18_000)];
-		s.announcement = { kind: "scheduled", text: "in 2d14h" };
+		s.announcement = {
+			kind: "scheduled",
+			text: "Reset announced · in 1h10m",
+			shortText: "in 1h10m",
+		};
 		const lines = renderStatus([s], c, 200, GRAPHITE, NOW);
 		expect(strip(lines[0] ?? "")).not.toContain("↻");
+	});
+
+	it("keeps the announcement on the codex segment when it lands on line two", () => {
+		const c = cfg();
+		c.display.mode = "all";
+		c.display.compact_others = false;
+		const codex = snap();
+		codex.windows = [win("5h", 42, NOW + TWO_H_15M_MS, 18_000)];
+		codex.announcement = {
+			kind: "scheduled",
+			text: "Reset announced · in 1h10m",
+			shortText: "in 1h10m",
+		};
+		const claude = snap();
+		claude.provider = "anthropic";
+		claude.plan = "claude";
+		claude.windows = [win("5h", 12, NOW + TWO_H_15M_MS, 18_000)];
+		// Narrow enough that the two segments cannot share one line.
+		const lines = renderStatus([claude, codex], c, 46, GRAPHITE, NOW);
+		expect(lines).toHaveLength(2);
+		expect(strip(lines[0] ?? "")).not.toContain("↻");
+		// Second row → compact wording.
+		expect(strip(lines[1] ?? "")).toContain("↻ in 1h10m");
+		expect(strip(lines[1] ?? "")).not.toContain("Reset announced");
+	});
+
+	it("uses the full announcement wording when codex is on the first row", () => {
+		const c = cfg();
+		c.display.mode = "all";
+		c.display.compact_others = false;
+		const codex = snap();
+		codex.windows = [win("5h", 42, NOW + TWO_H_15M_MS, 18_000)];
+		codex.announcement = {
+			kind: "scheduled",
+			text: "Reset announced · in 1h10m",
+			shortText: "in 1h10m",
+		};
+		const claude = snap();
+		claude.provider = "anthropic";
+		claude.plan = "claude";
+		claude.windows = [win("5h", 12, NOW + TWO_H_15M_MS, 18_000)];
+		const lines = renderStatus([codex, claude], c, 200, GRAPHITE, NOW);
+		expect(lines).toHaveLength(1);
+		expect(strip(lines[0] ?? "")).toContain("↻ Reset announced · in 1h10m");
+	});
+
+	it("keeps the announcement on the compact summary line", () => {
+		const c = cfg();
+		c.display.mode = "all";
+		c.display.compact_others = true;
+		const codex = snap();
+		codex.windows = [win("5h", 42, NOW + TWO_H_15M_MS, 18_000)];
+		codex.announcement = {
+			kind: "scheduled",
+			text: "Reset announced · in 1h10m",
+			shortText: "in 1h10m",
+		};
+		const claude = snap();
+		claude.provider = "anthropic";
+		claude.plan = "claude";
+		claude.windows = [win("5h", 12, NOW + TWO_H_15M_MS, 18_000)];
+		const lines = renderStatus([claude, codex], c, 200, GRAPHITE, NOW, {
+			provider: "anthropic",
+			plan: "claude",
+		});
+		expect(lines).toHaveLength(2);
+		expect(strip(lines[0] ?? "")).not.toContain("↻");
+		// Summary row → compact wording.
+		expect(strip(lines[1] ?? "")).toContain("↻ in 1h10m");
+		expect(strip(lines[1] ?? "")).not.toContain("Reset announced");
+	});
+
+	it("stands the announcement alone when codex has no segment of its own", () => {
+		const c = cfg();
+		const codex = snap();
+		codex.announcement = {
+			kind: "scheduled",
+			text: "Reset announced · in 1h10m",
+			shortText: "in 1h10m",
+		};
+		const lines = renderStatus([codex], c, 200, GRAPHITE, NOW);
+		expect(strip(lines[0] ?? "")).toBe("↻ Reset announced · in 1h10m");
+	});
+
+	it("keeps the standalone announcement fully worded on a later row", () => {
+		const c = cfg();
+		c.display.mode = "all";
+		c.display.compact_others = false;
+		const codex = snap();
+		codex.windows = [];
+		codex.announcement = {
+			kind: "scheduled",
+			text: "Reset announced · in 1h10m",
+			shortText: "in 1h10m",
+		};
+		const claude = snap();
+		claude.provider = "anthropic";
+		claude.plan = "claude";
+		claude.windows = [win("5h", 12, NOW + TWO_H_15M_MS, 18_000)];
+		// Narrow: the standalone announcement cannot share the first row.
+		const lines = renderStatus([claude, codex], c, 30, GRAPHITE, NOW);
+		expect(lines).toHaveLength(2);
+		// A lone "↻ in 1h10m" says nothing without its label.
+		expect(strip(lines[1] ?? "")).toBe("↻ Reset announced · in 1h10m");
+	});
+
+	it("keeps the forecast fully worded on a secondary row", () => {
+		const c = cfg();
+		c.display.mode = "all";
+		c.display.compact_others = false;
+		const codex = snap();
+		codex.windows = [win("5h", 42, NOW + TWO_H_15M_MS, 18_000)];
+		// A forecast has no compact form: "42%" alone would say nothing.
+		codex.announcement = {
+			kind: "watch",
+			text: "AI forecast · reset possible (42%)",
+			chancePercent: 42,
+		};
+		const claude = snap();
+		claude.provider = "anthropic";
+		claude.plan = "claude";
+		claude.windows = [win("5h", 12, NOW + TWO_H_15M_MS, 18_000)];
+		const lines = renderStatus([claude, codex], c, 60, GRAPHITE, NOW);
+		expect(lines).toHaveLength(2);
+		expect(strip(lines[1] ?? "")).toContain(
+			"↻ AI forecast · reset possible (42%)",
+		);
+	});
+
+	it("dims the announcement together with its stale segment", () => {
+		const c = cfg();
+		const s = snap();
+		s.windows = [win("5h", 42, NOW + TWO_H_15M_MS, 18_000)];
+		s.fetchedAt = NOW - 2 * 3_600_000; // stale past one hour
+		s.announcement = {
+			kind: "scheduled",
+			text: "Reset announced · in 1h10m",
+			shortText: "in 1h10m",
+		};
+		const line = renderStatus([s], c, 200, GRAPHITE, NOW)[0] ?? "";
+		expect(line).toContain("\x1b[2m");
+		// The dim wraps the announcement too, not just the bar.
+		expect(line.indexOf("↻")).toBeGreaterThan(line.indexOf("\x1b[2m"));
+		expect(line).toContain("\x1b[22m");
 	});
 });
 
@@ -658,7 +815,7 @@ describe("display semantics", () => {
 		const lines = renderStatus([relay, codex], cfg(), 200, GRAPHITE, NOW);
 		expect(lines).toHaveLength(1);
 		expect(strip(lines[0] ?? "")).toBe(
-			"4sapi bal $200.00 │ Codex 5h ■■■■■■■■■■■■ 42% ⏰2h15m",
+			"4sapi $200.00 │ Codex 5h ■■■■■■■■■■■■ 42% ⏰2h15m",
 		);
 	});
 });

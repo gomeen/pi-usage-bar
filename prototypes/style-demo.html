@@ -49,7 +49,7 @@
 
 <h2>B · display.mode 控制（受上方切换影响）</h2>
 <div class="term" id="secB"></div>
-<div class="cap">上：mode=active（只显当前 provider，cs 的行为）。下：mode=all（四家同显 + ↻ 官方重置公告 + Codex credits 余额）。</div>
+<div class="cap">上：mode=active（只显当前 provider，cs 的行为）。下：mode=all（四家同显，↻ 下次重置预告跟在 Codex 段尾 + Codex credits 余额）。</div>
 
 <h2>C · 特殊状态与中转站</h2>
 <div class="term" id="secC"></div>
@@ -57,7 +57,7 @@
 
 <h2>D · 窄终端（约 80 列）降级</h2>
 <div class="term narrow" id="secD"></div>
-<div class="cap">mode=all 在窄 footer 的堆叠方案：每家一行，窗口并排。</div>
+<div class="cap">mode=all 在窄 footer 的堆叠方案：每家一行，窗口并排；↻ 预告跟到 Codex 那一行。</div>
 
 <h2>E · cs 绿 vs cxs 青绿（s_ok 默认色）</h2>
 <div class="term" id="secE"></div>
@@ -74,7 +74,7 @@
   <li><b>s_ok 默认色</b>：cs 绿（推荐，claude-code-usage-bar 同款）还是 cxs 青绿？</li>
   <li><b>bar 宽度 12 格</b>可以吗？还是想要更窄（8 格省 footer 宽度）？</li>
   <li><b>四家同显的分隔</b>：一行用 │ 拼到底（B 区下样例）可以吗？</li>
-  <li><b>↻ 官方重置公告</b>：跟在 Codex 段尾（B 区下样例）还是单独一行？</li>
+  <li><b>↻ 下次重置预告</b>：已定——跟在 Codex 段尾（Codex 在第几行就跟到第几行），不单独成行。</li>
   <li><b>bal 油表条 6 格 + 金额</b>（C 区）可以吗？还是纯文本 bal $200.00？</li>
   <li><b>窄终端降级</b>：每家一行堆叠（D 区）可以吗？</li>
   <li><b>density 默认 regular</b> 可以吗？</li>
@@ -172,7 +172,10 @@ const P = {
   zai:    {name:'ZAI',    w1:{label:'5h',p:88,reset:r5(37*60)},         w2:{label:'7d',p:34,reset:r7(4*86400+9*3600)}},
   mm:     {name:'MiniMax',w1:{label:'2h',p:50,reset:r5(1*3600+7*60)},  w2:{label:'7d',p:72,reset:r7(6*86400+3*3600)}},
 };
-const resets = '↻ '+span(PAL.ink,'Official reset · ')+span(PAL.mute,'21h ago');
+// 下次重置预告（issue 012 修订）：只预告“将来”的重置，已经发生过的重置不再显示。
+// 渲染层跟 Codex 段走：Codex 在第几行，预告就跟到第几行；第一排给完整文案，第二排给简短文案。
+const resets = span(PAL.ink,'↻')+' '+span(PAL.mute,'Reset announced · in 1h10m');
+const resetsShort = span(PAL.ink,'↻')+' '+span(PAL.mute,'in 1h10m');
 function providerSeg(p){ return [win(p.w1.label,p.w1.p,p.w1.reset), win(p.w2.label,p.w2.p,p.w2.reset), p.extra].filter(Boolean); }
 const join = arr => arr.join(S.look==='classic'?span(PAL.mute,' | '):S.look==='ring'?RSEP():SEP());
 
@@ -201,12 +204,14 @@ function renderB(){
   let out='';
   if(S.mode==='active'){
     out+=L(span(PAL.mute,'// mode=active — 当前模型是 Codex 时') );
-    out+=L(span(PAL.dim||PAL.ink,'')+join(providerSeg(P.codex))+' '+resets);
+    out+=L(join(providerSeg(P.codex))+' '+resets);
   }else{
-    out+=L(span(PAL.mute,'// mode=all — 四家同显（↻ 只跟 Codex）'));
-    const segs=[P.codex,P.claude,P.zai,P.mm].map(p=>span(PAL.ink,p.name)+' '+join(providerSeg(p)));
+    out+=L(span(PAL.mute,'// mode=all — 四家同显（↻ 只跟 Codex 段）'));
+    const segs=[P.codex,P.claude,P.zai,P.mm].map(p=>{
+      const body = span(PAL.ink,p.name)+' '+join(providerSeg(p));
+      return p===P.codex ? body+' '+resets : body;   // 预告跟在 Codex 段尾
+    });
     out+=L(segs.join(SEP()));
-    out+=L(resets);
   }
   document.getElementById('secB').innerHTML=out;
 }
@@ -230,9 +235,14 @@ function renderC(){
 // ---- section D: narrow stacking ----
 function renderD(){
   let out=L(span(PAL.mute,'// mode=all @ 80 列：每家一行堆叠'));
-  for(const p of [P.codex,P.claude,P.zai,P.mm])
-    out+=L(span(PAL.ink,p.name)+' '+join(providerSeg(p)));
-  out+=L(resets);
+  for(const p of [P.codex,P.claude,P.zai,P.mm]){
+    const body = span(PAL.ink,p.name)+' '+join(providerSeg(p));
+    out+=L(p===P.codex ? body+' '+resets : body);   // 预告跟到 Codex 那一行
+  }
+  out+=L('');
+  out+=L(span(PAL.mute,'// Codex 落到第二排时，预告用简短文案'));
+  out+=L(span(PAL.ink,P.claude.name)+' '+join(providerSeg(P.claude)));
+  out+=L(span(PAL.ink,P.codex.name)+' '+join(providerSeg(P.codex))+' '+resetsShort);
   document.getElementById('secD').innerHTML=out;
 }
 // ---- section E: green vs teal ----

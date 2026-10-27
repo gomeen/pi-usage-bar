@@ -6,6 +6,11 @@
  * lock for multi-process dedup (issue 014). Semantics ported from
  * codex-statebar's resets.py; the announcement text is pre-formatted here,
  * in English, from our own short templates — never remote text.
+ *
+ * Only the UPCOMING reset is announced (issue 012 revision): `latest_reset`
+ * describes a reset that already happened, which reads as "when did my quota
+ * reset" — noise on a bar that already shows live windows. A past reset
+ * therefore renders nothing at all.
  */
 
 import type { FileCache } from "../cache";
@@ -67,24 +72,24 @@ function isoTime(value: unknown): number | null {
 	return Number.isNaN(ms) ? null : ms;
 }
 
-/** Relative duration: floor for past, ceil for future; units m/h/d. */
-function dur(seconds: number, future: boolean): string {
-	const s = Math.max(0, seconds);
-	let divisor = 60;
-	let unit = "m";
-	if (s >= 86_400) {
-		divisor = 86_400;
-		unit = "d";
-	} else if (s >= 3_600) {
-		divisor = 3_600;
-		unit = "h";
-	}
-	const value = future ? Math.ceil(s / divisor) : Math.floor(s / divisor);
-	return `${Math.max(1, value)}${unit}`;
+/**
+ * Remaining time until the announced reset, as a composite countdown:
+ * "45m", "1h10m", "1d23h". Ceil-rounded to the minute: the announcement is an
+ * upper bound, and a reset 30 seconds away must not collapse to "0m".
+ */
+function durFuture(seconds: number): string {
+	const minutes = Math.max(1, Math.ceil(Math.max(0, seconds) / 60));
+	const days = Math.floor(minutes / 1440);
+	const hours = Math.floor((minutes % 1440) / 60);
+	const rest = minutes % 60;
+	if (days > 0) return `${days}d${String(hours).padStart(2, "0")}h`;
+	if (hours > 0) return `${hours}h${String(rest).padStart(2, "0")}m`;
+	return `${rest}m`;
 }
 
 /**
- * Pure parse (priority scheduled > watch > latest, per issue 012/ticket).
+ * Pure parse (priority scheduled > watch, per issue 012 + revision).
+ * A reset that already happened (`latest_reset`) is not announced.
  * Data older than MAX_STALE is stale-hidden: null.
  */
 function parseAnnouncement(
@@ -106,11 +111,19 @@ function parseAnnouncement(
 	const scheduled = data.scheduled_reset;
 	if (isRecord(scheduled) && scheduled.status === "scheduled") {
 		const target = isoTime(scheduled.scheduled_for);
-		const text =
-			target !== null && target > now
-				? `Reset announced · in ${dur((target - now) / 1000, true)}`
-				: "Reset announced · awaiting confirmation";
-		return { kind: "scheduled", text };
+		if (target !== null && target > now) {
+			const remaining = durFuture((target - now) / 1000);
+			return {
+				kind: "scheduled",
+				text: `Reset announced · in ${remaining}`,
+				shortText: `in ${remaining}`,
+			};
+		}
+		return {
+			kind: "scheduled",
+			text: "Reset announced · awaiting confirmation",
+			shortText: "awaiting confirmation",
+		};
 	}
 
 	const watch = data.active_watch;
@@ -130,26 +143,17 @@ function parseAnnouncement(
 				chance >= 0 &&
 				chance <= 100;
 			const text = `AI forecast · reset possible${valid ? ` (${chance}%)` : ""}`;
+			// No short wording for a forecast: "42%" alone says nothing, and
+			// the full sentence is the only self-explanatory form.
 			return valid
 				? { kind: "watch", text, chancePercent: chance }
 				: { kind: "watch", text };
 		}
 	}
 
-	const latest = data.latest_reset;
-	if (isRecord(latest)) {
-		const stamp = isoTime(latest.announced_at);
-		if (stamp !== null && stamp <= now) {
-			const prefix =
-				latest.reset_type === "banked"
-					? "Banked reset · "
-					: "Official reset · ";
-			return {
-				kind: "latest",
-				text: `${prefix}${dur((now - stamp) / 1000, false)} ago`,
-			};
-		}
-	}
+	// `latest_reset` (a reset that already happened) is deliberately not
+	// rendered: the bar answers "when does the next reset happen", not "when
+	// did the last one happen".
 	return null;
 }
 
@@ -284,6 +288,8 @@ export async function fetchResetAnnouncement(
 						"active_watch" in data ||
 						"latest_reset" in data)
 				) {
+					// `latest_reset` alone is accepted as a known shape (the
+					// payload is still valid) but renders nothing.
 					const fresh: ResetsEntry = {
 						data,
 						etag: headerGet(res.headers, "etag"),

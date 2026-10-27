@@ -24,7 +24,11 @@ const SNAPSHOTS: UsageSnapshot[] = [
 				resetsAt: NOW + 273_600_000,
 			},
 		],
-		announcement: { kind: "latest", text: "Official reset · 2h ago" },
+		announcement: {
+			kind: "scheduled",
+			text: "Reset announced · in 1h10m",
+			shortText: "in 1h10m",
+		},
 	},
 	{
 		provider: "zai",
@@ -77,7 +81,7 @@ test("width, spacing, resets and balance settings affect the actual bar", () => 
 	config.show_balance = false;
 	expect(display(config)).not.toContain("4sapi");
 	config.show_resets = false;
-	expect(display(config)).not.toContain("Official reset");
+	expect(display(config)).not.toContain("Reset announced");
 	config.display.compact_others = false;
 	const regular = display(config);
 	config.density = "cozy";

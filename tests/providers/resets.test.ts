@@ -52,7 +52,7 @@ function opts(
 const SCHEDULED_PAYLOAD = statusBody({
 	scheduled_reset: {
 		status: "scheduled",
-		scheduled_for: new Date(T0 + 47 * HOUR).toISOString(), // +47h → ceil → 2d
+		scheduled_for: new Date(T0 + 47 * HOUR).toISOString(), // +47h → 1d23h
 	},
 	active_watch: null,
 	latest_reset: {
@@ -66,7 +66,39 @@ describe("fetchResetAnnouncement parsing", () => {
 		const cache = newCache();
 		const fetchImpl: FetchLike = async () => res(200, SCHEDULED_PAYLOAD);
 		const out = await fetchResetAnnouncement(opts(cache, fetchImpl));
-		expect(out).toEqual({ kind: "scheduled", text: "Reset announced · in 2d" });
+		expect(out).toEqual({
+			kind: "scheduled",
+			text: "Reset announced · in 1d23h",
+			shortText: "in 1d23h",
+		});
+	});
+
+	it("counts the upcoming reset down in composite units", async () => {
+		const cases: Array<[number, string]> = [
+			[70 * MIN, "Reset announced · in 1h10m"],
+			[45 * MIN, "Reset announced · in 45m"],
+			[3 * HOUR, "Reset announced · in 3h00m"],
+			[50 * HOUR, "Reset announced · in 2d02h"],
+		];
+		for (const [offset, text] of cases) {
+			const cache = newCache();
+			const fetchImpl: FetchLike = async () =>
+				res(
+					200,
+					statusBody({
+						scheduled_reset: {
+							status: "scheduled",
+							scheduled_for: new Date(T0 + offset).toISOString(),
+						},
+					}),
+				);
+			const out = await fetchResetAnnouncement(opts(cache, fetchImpl));
+			expect(out).toEqual({
+				kind: "scheduled",
+				text,
+				shortText: text.replace("Reset announced · ", ""),
+			});
+		}
 	});
 
 	it("downgrades a past/invalid scheduled time to awaiting confirmation", async () => {
@@ -89,6 +121,7 @@ describe("fetchResetAnnouncement parsing", () => {
 			expect(out).toEqual({
 				kind: "scheduled",
 				text: "Reset announced · awaiting confirmation",
+				shortText: "awaiting confirmation",
 			});
 		}
 	});
@@ -135,35 +168,23 @@ describe("fetchResetAnnouncement parsing", () => {
 		expect("chancePercent" in (out ?? {})).toBe(false);
 	});
 
-	it("renders latest resets, banked or regular, in m/h/d units", async () => {
-		const cases: Array<[string, string, string]> = [
-			[
-				"regular",
-				new Date(T0 - 26 * HOUR).toISOString(),
-				"Official reset · 1d ago",
-			],
-			[
-				"banked",
-				new Date(T0 - 3 * HOUR).toISOString(),
-				"Banked reset · 3h ago",
-			],
-			[
-				"regular",
-				new Date(T0 - 5 * MIN).toISOString(),
-				"Official reset · 5m ago",
-			],
+	it("never announces a reset that already happened", async () => {
+		const cases = [
+			new Date(T0 - 26 * HOUR).toISOString(),
+			new Date(T0 - 3 * HOUR).toISOString(),
+			new Date(T0 - 5 * MIN).toISOString(),
 		];
-		for (const [resetType, announcedAt, text] of cases) {
+		for (const announcedAt of cases) {
 			const cache = newCache();
 			const fetchImpl: FetchLike = async () =>
 				res(
 					200,
 					statusBody({
-						latest_reset: { reset_type: resetType, announced_at: announcedAt },
+						latest_reset: { reset_type: "regular", announced_at: announcedAt },
 					}),
 				);
 			const out = await fetchResetAnnouncement(opts(cache, fetchImpl));
-			expect(out).toEqual({ kind: "latest", text });
+			expect(out).toBeNull();
 		}
 	});
 
@@ -198,7 +219,11 @@ describe("fetchResetAnnouncement caching", () => {
 		const second = await fetchResetAnnouncement(opts(cache, spy, T0 + 4 * MIN));
 		expect(called).toBe(false);
 		expect(calls).toBe(1);
-		expect(second).toEqual(first);
+		// The cached announcement is re-read, so the countdown has moved on
+		// (the announcement time is absolute; only the countdown is derived).
+		expect(second?.kind).toBe("scheduled");
+		expect(second?.text).not.toBe(first?.text);
+		expect(second?.text).toBe("Reset announced · in 1d22h");
 	});
 
 	it("revalidates with If-None-Match and bumps fetchedAt on 304", async () => {

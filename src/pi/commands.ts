@@ -59,7 +59,7 @@ function describeSnapshot(s: UsageSnapshot): string[] {
 		lines.push(`Balance: ${s.balance.amount.toFixed(2)} (${s.balance.kind})`);
 	}
 	if (s.announcement) {
-		lines.push(`${s.announcement.text}`);
+		lines.push(`Announcement: ${s.announcement.text}`);
 	}
 	lines.push(
 		`Fetched: ${new Date(s.fetchedAt).toISOString().replace("T", " ").slice(0, 19)} UTC`,

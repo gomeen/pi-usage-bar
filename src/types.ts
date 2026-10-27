@@ -41,9 +41,15 @@ export interface Balance {
 
 /** Official Codex reset announcement (codex-resets.com), already pre-formatted. */
 export interface ResetAnnouncement {
-	kind: "scheduled" | "watch" | "latest";
-	/** Pre-formatted relative time, e.g. "in 2d14h" or "21h ago". */
+	kind: "scheduled" | "watch";
+	/** Pre-formatted relative time, e.g. "Reset announced · in 1h10m". */
 	text: string;
+	/**
+	 * Compact wording for a secondary row, e.g. "in 1h10m". Only the
+	 * scheduled kind has one: it carries a time value worth abbreviating.
+	 * A forecast has no such value, so it keeps its full wording.
+	 */
+	shortText?: string;
 	/** Reset chance percent for kind === "watch" (AI forecast). */
 	chancePercent?: number;
 }

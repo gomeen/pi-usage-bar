@@ -8,8 +8,8 @@
 
 - **footer 用量条**：当前模型对应套餐的两个配额窗口（会话 + 周窗），每格渐变 bar + `⏰` 重置倒计时
 - **四种 look**：aurora 块条（默认）、aurora 细线、ring（`◔ 14% 5h · resets 1h07m`）、classic 电池条——全部可实时切换
-- **中转站余额**：one-api/new-api 系中转的自定义 provider 自动探测计费端点，显示剩余金额（`bal $200.00`）
-- **官方重置公告**：Codex 套餐接入 [codex-resets.com](https://codex-resets.com)（`↻ Official reset · 21h ago`）
+- **中转站余额**：one-api/new-api 系中转（或提供 `/v1/usage` 的 Sub2API 系站点）的自定义 provider 自动探测计费端点，显示剩余金额（`$200.00`）
+- **下次官方重置预告**：Codex 套餐接入 [codex-resets.com](https://codex-resets.com)，仅在站点发布了将来重置预告时显示（`↻ Reset announced · in 1h10m`），不再回显已经发生过的重置
 - **`/usage`** 单一入口查看套餐详情或进入 **Appearance / Display / Advanced**，修改直接作用于实际用量条，**`--usage`** 一行 JSON 冒烟测试
 
 ## 支持的套餐
@@ -20,9 +20,9 @@
 | Anthropic Claude | `anthropic` | Claude Pro/Max OAuth |
 | ZAI Coding Plan（国际/国内） | `zai`、`zai-coding-cn` | API key |
 | MiniMax Token Plan（国际/国内） | `minimax`、`minimax-cn` | API key |
-| 中转站（one-api/new-api 系） | 任意自定义 provider id | API key |
+| 中转站（one-api/new-api 系、Sub2API 系 `/v1/usage`） | 任意自定义 provider id | API key |
 
-自定义 provider（代理、cc-switch 条目）会自动探测中转计费端点；也可以用 `providerMap` 显式映射到某个套餐。
+自定义 provider（代理、cc-switch 条目）会自动探测中转计费端点——先试 one-api/new-api 的 dashboard 端点族，再回退到 Sub2API 风格的 `{site}/v1/usage`；也可以用 `providerMap` 显式映射到某个套餐。
 
 ## 安装
 
