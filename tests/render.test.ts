@@ -638,23 +638,23 @@ describe("balance and announcement", () => {
 // ---------------------------------------------------------------------------
 
 describe("stale marking", () => {
-	it("appends a mute ⟳ past 3× the refresh interval", () => {
+	it("appends a mute ~ past 3× the refresh interval", () => {
 		const c = cfg();
 		const s = snap();
 		s.windows = [win("5h", 42, NOW + TWO_H_15M_MS, 18_000)];
 		s.fetchedAt = NOW - 10 * 60_000; // 10min > 3 × 2min
 		expect(renderStatus([s], c, 200, GRAPHITE, NOW)).toEqual([
-			`${aurora42(c)} ${fg(GRAPHITE.mute)}⟳${RESET}`,
+			`${aurora42(c)} ${fg(GRAPHITE.mute)}~${RESET}`,
 		]);
 	});
 
-	it("dims the whole segment (⟳ included) past one hour", () => {
+	it("dims the whole segment (~ included) past one hour", () => {
 		const c = cfg();
 		const s = snap();
 		s.windows = [win("5h", 42, NOW + TWO_H_15M_MS, 18_000)];
 		s.fetchedAt = NOW - 2 * 3_600_000;
 		expect(renderStatus([s], c, 200, GRAPHITE, NOW)).toEqual([
-			`\x1b[2m${aurora42(c)} ${fg(GRAPHITE.mute)}⟳${RESET}\x1b[22m`,
+			`\x1b[2m${aurora42(c)} ${fg(GRAPHITE.mute)}~${RESET}\x1b[22m`,
 		]);
 	});
 

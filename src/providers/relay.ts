@@ -10,7 +10,7 @@
  * A miss on one family falls through to the next; only when both families are
  * absent is the host negative-cached (one probe per week). Transient failures
  * keep the last good amount with its original `fetchedAt` so render adds the
- * ⟳ mark. Never throws.
+ * `~` (approximate) mark. Never throws.
  */
 
 import { createHash } from "node:crypto";

@@ -164,7 +164,7 @@ describe("probeRelayBalance", () => {
 		);
 		expect(second.status).toBe("ok");
 		expect(second.balance?.amount).toBe(75);
-		expect(second.fetchedAt).toBe(NOW); // cached timestamp → render adds ⟳
+		expect(second.fetchedAt).toBe(NOW); // cached timestamp → render adds ~
 	});
 
 	it("short-circuits on the negative cache without any network call", async () => {

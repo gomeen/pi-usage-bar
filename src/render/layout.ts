@@ -28,6 +28,11 @@ const PLAN_NAMES: Record<PlanKind, string> = {
 
 const DIM_AFTER_MS = 3_600_000;
 
+/** Stale marker (issue 014): data age past 3× the refresh interval. `~` reads
+ * as "approximate" — stale numbers are no longer guaranteed live — where the
+ * earlier ⟳ read as "refreshing", the opposite of what it marked. */
+const STALE_MARK = "~";
+
 /** Short relay label only; provider identity and request URLs stay untouched. */
 function relayDisplayName(provider: string): string {
 	try {
@@ -341,7 +346,7 @@ function compactItem(
 		item += ` ${announcementPart(announcement, palette)}`;
 	}
 	if (now - snap.fetchedAt > config.refresh_minutes * 3 * 60_000) {
-		item += ` ${fg(palette.mute)}⟳${RESET}`;
+		item += ` ${fg(palette.mute)}${STALE_MARK}${RESET}`;
 	}
 	return item;
 }
@@ -376,11 +381,11 @@ function renderSegment(
 	}
 	const sep = separator(config, palette);
 	let seg = parts.join(sep);
-	// Stale marking (issue 014): ⟳ past 3× the refresh interval; the whole
-	// segment is dimmed past one hour (⟳ included in the dim wrap).
+	// Stale marking (issue 014): ~ past 3× the refresh interval; the whole
+	// segment is dimmed past one hour (~ included in the dim wrap).
 	const age = now - snap.fetchedAt;
 	if (age > config.refresh_minutes * 3 * 60_000) {
-		seg += ` ${fg(palette.mute)}⟳${RESET}`;
+		seg += ` ${fg(palette.mute)}${STALE_MARK}${RESET}`;
 	}
 	if (multi || snap.status === "error") {
 		// Equal-width names keep the bars vertically aligned across lines.
