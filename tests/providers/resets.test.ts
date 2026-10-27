@@ -77,7 +77,8 @@ describe("fetchResetAnnouncement parsing", () => {
 		const cases: Array<[number, string]> = [
 			[70 * MIN, "Reset announced · in 1h10m"],
 			[45 * MIN, "Reset announced · in 45m"],
-			[3 * HOUR, "Reset announced · in 3h00m"],
+			[3 * HOUR, "Reset announced · in 3h"],
+			[48 * HOUR, "Reset announced · in 2d"],
 			[50 * HOUR, "Reset announced · in 2d02h"],
 		];
 		for (const [offset, text] of cases) {

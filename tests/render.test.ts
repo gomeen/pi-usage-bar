@@ -282,6 +282,8 @@ describe("formatCountdown", () => {
 		);
 		expect(formatCountdown(NOW + 37 * 60_000, NOW, 18_000, "5h")).toBe("37m");
 		expect(formatCountdown(NOW + 4_020_000, NOW, 18_000, "5h")).toBe("1h07m");
+		// Deviation from cs: a zero smaller unit is dropped (no `2h00m`).
+		expect(formatCountdown(NOW + 2 * 3_600_000, NOW, 18_000, "5h")).toBe("2h");
 	});
 
 	it("formats long windows as d+hh / bare hours", () => {
@@ -291,6 +293,10 @@ describe("formatCountdown", () => {
 		expect(formatCountdown(NOW + 5 * 3_600_000, NOW, 604_800, "7d")).toBe("5h");
 		// Label containing "d" selects the long format even without a duration.
 		expect(formatCountdown(NOW + 5 * 3_600_000, NOW, null, "7d")).toBe("5h");
+		// Deviation from cs: a zero hour is dropped (no `6d00h`).
+		expect(formatCountdown(NOW + 6 * 86_400_000, NOW, 604_800, "7d")).toBe(
+			"6d",
+		);
 	});
 
 	it("never goes negative and floors", () => {

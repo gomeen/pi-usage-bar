@@ -79,8 +79,10 @@ function visibleWidth(s: string): number {
 /**
  * ⏰ countdown (cs §2.1, adapted per issues 010/013): windows of >= 3.5 days
  * (or labeled with "d") render `3d04h` (d + zero-padded h, else bare `5h`);
- * shorter windows render `2h15m` (h + zero-padded m, else `37m`). Floors the
- * remaining time and is never negative. A missing resetsAt omits ⏰ entirely.
+ * shorter windows render `2h15m` (h + zero-padded m, else `37m`). Deviation
+ * from cs: a zero smaller unit is dropped, so an exactly-whole remainder
+ * reads `6d` / `2h` instead of `6d00h` / `2h00m`. Floors the remaining time
+ * and is never negative. A missing resetsAt omits ⏰ entirely.
  */
 export function formatCountdown(
 	resetsAt: number,
@@ -94,16 +96,22 @@ export function formatCountdown(
 	if (longWindow) {
 		const days = Math.floor(totalSeconds / 86_400);
 		const hours = Math.floor((totalSeconds % 86_400) / 3600);
-		return days > 0
-			? `${days}d${String(hours).padStart(2, "0")}h`
-			: `${hours}h`;
+		if (days > 0) {
+			return hours > 0
+				? `${days}d${String(hours).padStart(2, "0")}h`
+				: `${days}d`;
+		}
+		return `${hours}h`;
 	}
 	const totalMinutes = Math.floor(totalSeconds / 60);
 	const hours = Math.floor(totalMinutes / 60);
 	const minutes = totalMinutes % 60;
-	return hours > 0
-		? `${hours}h${String(minutes).padStart(2, "0")}m`
-		: `${minutes}m`;
+	if (hours > 0) {
+		return minutes > 0
+			? `${hours}h${String(minutes).padStart(2, "0")}m`
+			: `${hours}h`;
+	}
+	return `${minutes}m`;
 }
 
 /** Style separator, used between segments and between windows inside a segment. */

@@ -75,15 +75,23 @@ function isoTime(value: unknown): number | null {
 /**
  * Remaining time until the announced reset, as a composite countdown:
  * "45m", "1h10m", "1d23h". Ceil-rounded to the minute: the announcement is an
- * upper bound, and a reset 30 seconds away must not collapse to "0m".
+ * upper bound, and a reset 30 seconds away must not collapse to "0m". A zero
+ * smaller unit is dropped, so an exactly-whole remainder reads "2d" / "3h"
+ * instead of "2d00h" / "3h00m".
  */
 function durFuture(seconds: number): string {
 	const minutes = Math.max(1, Math.ceil(Math.max(0, seconds) / 60));
 	const days = Math.floor(minutes / 1440);
 	const hours = Math.floor((minutes % 1440) / 60);
 	const rest = minutes % 60;
-	if (days > 0) return `${days}d${String(hours).padStart(2, "0")}h`;
-	if (hours > 0) return `${hours}h${String(rest).padStart(2, "0")}m`;
+	if (days > 0)
+		return hours > 0
+			? `${days}d${String(hours).padStart(2, "0")}h`
+			: `${days}d`;
+	if (hours > 0)
+		return rest > 0
+			? `${hours}h${String(rest).padStart(2, "0")}m`
+			: `${hours}h`;
 	return `${rest}m`;
 }
 
