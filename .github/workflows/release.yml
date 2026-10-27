@@ -21,4 +21,23 @@ jobs:
       - run: npm ci
       - run: npx tsc --noEmit
       - run: npx vitest run
-      - run: npm publish --access public
+      - name: Check whether the version is already published
+        id: release
+        run: |
+          version=$(node -p "require('./package.json').version")
+          # Anonymous registry read: the registry needs no credentials for a
+          # public package, and the CI .npmrc has no token to authenticate with.
+          if node -e '
+            fetch("https://registry.npmjs.org/@gomeen%2Fpi-usage-bar")
+              .then((r) => (r.ok ? r.json() : {}))
+              .then((p) => process.exit(p.versions && p.versions[process.argv[1]] ? 0 : 1))
+              .catch(() => process.exit(1))
+          ' "$version"; then
+            echo "Version $version is already published, skipping publish."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Publish
+        if: steps.release.outputs.skip != 'true'
+        run: npm publish --access public
