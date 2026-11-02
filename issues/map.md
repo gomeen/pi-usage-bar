@@ -42,6 +42,7 @@ status: open
 - [Robustness spec](014-robustness-spec.md): Claude 按 Retry-After 退避、其他家 1→5→15 分钟；stale=3 倍刷新间隔标⟳（修订：换 `~`——⟳ 读作"刷新中"与实际语义相反，`~` 取"数值已是近似值"之意，ASCII 零宽度问题）、超 1 小时变暗；多进程共享缓存+锁；MiniMax reset 三级兜底绝不编造；每家错误隔离。
 - [Release process](015-release-process.md): 包名 `@gomeen/pi-usage-bar`（裸名已被占）；`pi-package` 关键字进 pi.dev/packages 画廊；发版全自动（tag→CI→publish，需 NPM_TOKEN secret）；README.md 英文 + README.zh.md 中文互链，致谢带仓库链接。
 - [Trusted publishing (OIDC) migration](016-trusted-publishing-migration.md): 修订 015 的 token 路线（write token 7 天过期、bypass-2FA token 2026-08 起不能做账号治理、2027-01 起不能直接发布）→ 改 OIDC 可信发布，发版仍是 tag→CI→publish 全自动；首次发布交互式 2FA（包须先存在才能配 Trusted Publisher）；npm 12 安装期默认变更对本包无影响；Trusted Publisher 配好后 2 天内须完成首次发布；2FA 只剩 WebAuthn 一条路。
+- [DeepSeek balance provider](018-deepseek-balance.md): 用户要求后从 out-of-scope 提出；官方 API 无订阅/无用量端点，只有 `/user/balance`——新增 `deepseek` 官方套餐，`Balance.kind:"prepaid"` + API 报告币种（CNY→¥、USD→$），首条 `balance_infos` 的 `total_balance`，`is_available` 忽略；端点固定第一方，`PI_DEEPSEEK_USAGE_ENDPOINT` 可覆盖；设置项 "Relay balance" 改名 "Balances"。
 
 ## Not yet specified
 
@@ -55,7 +56,7 @@ status: open
 
 - Claude `extra_usage`（按量溢出额度）显示：v1 不做；官方/社区语义确认后作为后续版本功能再加。
 - v1 附加 segments：模型名、context 条、prompt-cache 倒计时（Claude Code 专属概念）、成本显示。
-- v1 之外的 provider：Kimi、Moonshot、DeepSeek、OpenRouter、xAI、Baseten、Vercel、Fireworks 等（后续版本再议）。
+- v1 之外的 provider：Kimi、Moonshot、OpenRouter、xAI、Baseten、Vercel、Fireworks 等（后续版本再议；DeepSeek 已由 018 提出并实现，其余未变）。
 - i18n 多语言界面（v1 只英文，README 中英双语）。
 - 第三方工具缓存兼容（ccx 式外部读缓存文件）：无现成消费者，不做。
 - fork/移植 hknet/pi-usage-bars 代码。

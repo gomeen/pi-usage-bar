@@ -23,6 +23,7 @@ const PLAN_NAMES: Record<PlanKind, string> = {
 	"zai-cn": "ZAI",
 	minimax: "MiniMax",
 	"minimax-cn": "MiniMax",
+	deepseek: "DeepSeek",
 	relay: "Relay",
 };
 
@@ -230,7 +231,20 @@ function windowPart(
 	}
 }
 
-/** Balance text (issue 013): relay `$200.00`; credits `$12.50 credits`. */
+/**
+ * Currency symbol for a balance: the API-reported ISO code wins (DeepSeek:
+ * CNY→¥, USD→$); balances without one (relay probes) use `config.currency`.
+ */
+function balanceSymbol(
+	bal: NonNullable<UsageSnapshot["balance"]>,
+	config: UsageBarConfig,
+): string {
+	if (bal.currency === "CNY") return "¥";
+	if (bal.currency === "USD") return "$";
+	return config.currency;
+}
+
+/** Balance text (issue 013): relay/prepaid `$200.00`; credits `$12.50 credits`. */
 function balancePart(
 	snap: UsageSnapshot,
 	config: UsageBarConfig,
@@ -240,10 +254,11 @@ function balancePart(
 	if (bal === undefined || !config.show_balance) {
 		return null;
 	}
-	if (bal.kind === "relay") {
-		return `${fg(palette.ok)}${config.currency}${bal.amount.toFixed(2)}${RESET}`;
+	const amount = `${balanceSymbol(bal, config)}${bal.amount.toFixed(2)}`;
+	if (bal.kind === "credits") {
+		return `${fg(palette.ok)}${amount} credits${RESET}`;
 	}
-	return `${fg(palette.ok)}${config.currency}${bal.amount.toFixed(2)} credits${RESET}`;
+	return `${fg(palette.ok)}${amount}${RESET}`;
 }
 
 /** ↻ next-reset announcement (issues 012/013). The text is pre-formatted. */
@@ -330,7 +345,7 @@ function compactItem(
 	}
 	if (snap.balance !== undefined && config.show_balance) {
 		bits.push(
-			`${fg(palette.ok)}${config.currency}${snap.balance.amount.toFixed(2)}${RESET}`,
+			`${fg(palette.ok)}${balanceSymbol(snap.balance, config)}${snap.balance.amount.toFixed(2)}${RESET}`,
 		);
 	}
 	if (bits.length === 0 && announcement === null) {

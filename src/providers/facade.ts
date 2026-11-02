@@ -15,6 +15,7 @@ import type {
 } from "../types.js";
 import { createClaudeAdapter } from "./claude.js";
 import { createCodexAdapter } from "./codex.js";
+import { DeepSeekAdapter } from "./deepseek.js";
 import { MinimaxAdapter } from "./minimax.js";
 import { probeRelayBalance } from "./relay.js";
 import { fetchResetAnnouncement } from "./resets.js";
@@ -90,6 +91,8 @@ function adapterFor(plan: PlanKind, provider: string): ProviderAdapter | null {
 		case "minimax":
 		case "minimax-cn":
 			return new MinimaxAdapter(plan);
+		case "deepseek":
+			return new DeepSeekAdapter();
 		case "relay":
 			return null;
 	}

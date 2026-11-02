@@ -235,6 +235,7 @@ const ENDPOINT_ENV: ReadonlyArray<{
 	{ env: "PI_MINIMAX_CN_USAGE_ENDPOINT", key: "minimax-cn" },
 	{ env: "PI_MINIMAX_LEGACY_USAGE_ENDPOINT", key: "minimax-legacy" },
 	{ env: "PI_MINIMAX_CN_LEGACY_USAGE_ENDPOINT", key: "minimax-cn-legacy" },
+	{ env: "PI_DEEPSEEK_USAGE_ENDPOINT", key: "deepseek" },
 ];
 
 export function resolveEndpointOverrides(

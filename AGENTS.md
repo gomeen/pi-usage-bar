@@ -39,6 +39,7 @@ The domain model `UsageSnapshot` (src/types.ts) flows through everything. Three 
 | Claude API                          | `research/claude-usage-api.md`                                                                  |
 | ZAI API                             | `research/zai-usage-api.md`                                                                     |
 | MiniMax API                         | `research/minimax-usage-api.md`                                                                 |
+| DeepSeek API                        | `research/deepseek-usage-api.md`                                                                |
 | pi extension API                    | `research/pi-extension-api.md`                                                                  |
 | Style (looks, colors, formats)      | `research/cs-style-spec.md` + `issues/010-style-prototype.md`                                   |
 | Detection & providerMap             | `issues/008-provider-detection-mapping-spec.md`                                                 |

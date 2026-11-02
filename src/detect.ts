@@ -14,6 +14,7 @@ export const PLAN_KINDS: readonly PlanKind[] = [
 	"zai-cn",
 	"minimax",
 	"minimax-cn",
+	"deepseek",
 	"relay",
 ];
 
@@ -37,6 +38,7 @@ export const PLAN_HOSTS: Record<string, { plan: PlanKind; hosts: string[] }> = {
 	"zai-coding-cn": { plan: "zai-cn", hosts: ["open.bigmodel.cn"] },
 	minimax: { plan: "minimax", hosts: ["api.minimax.io"] },
 	"minimax-cn": { plan: "minimax-cn", hosts: ["api.minimaxi.com"] },
+	deepseek: { plan: "deepseek", hosts: ["api.deepseek.com"] },
 };
 
 export type DetectedRoute = {
@@ -115,6 +117,7 @@ const PLAN_LABELS: Record<PlanKind, string> = {
 	"zai-cn": "ZAI CN",
 	minimax: "MiniMax",
 	"minimax-cn": "MiniMax CN",
+	deepseek: "DeepSeek",
 	relay: "Relay",
 };
 

@@ -441,6 +441,28 @@ describe("balance and announcement", () => {
 		expect(strip(lines[0] ?? "")).toBe("¥352.00");
 	});
 
+	it("renders a prepaid balance with the API-reported currency (issue 018)", () => {
+		const c = cfg();
+		const s = snap();
+		s.provider = "deepseek";
+		s.plan = "deepseek";
+		s.balance = { kind: "prepaid", amount: 110, currency: "CNY" };
+		// The account currency wins over the configured relay symbol.
+		c.currency = "€";
+		expect(renderStatus([s], c, 200, GRAPHITE, NOW)).toEqual([
+			`${fg(GRAPHITE.ok)}¥110.00${RESET}`,
+		]);
+		s.balance = { kind: "prepaid", amount: 12.34, currency: "USD" };
+		expect(strip(renderStatus([s], c, 200, GRAPHITE, NOW)[0] ?? "")).toBe(
+			"$12.34",
+		);
+		// Unknown codes fall back to the configured symbol.
+		s.balance = { kind: "prepaid", amount: 5, currency: "XYZ" };
+		expect(strip(renderStatus([s], c, 200, GRAPHITE, NOW)[0] ?? "")).toBe(
+			"€5.00",
+		);
+	});
+
 	it("appends the ↻ announcement after a space, text verbatim", () => {
 		const c = cfg();
 		const s = snap();

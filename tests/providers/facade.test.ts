@@ -208,3 +208,48 @@ describe("fetchAllUsages relay isolation", () => {
 		expect(second[1]?.status).toBe("error");
 	});
 });
+
+describe("fetchAllUsages deepseek (issue 018)", () => {
+	it("routes the deepseek plan to the balance adapter", async () => {
+		const cache = newCache();
+		const urls: string[] = [];
+		const fetchImpl: FetchLike = async (url) => {
+			urls.push(String(url));
+			return jsonRes({
+				is_available: true,
+				balance_infos: [
+					{
+						currency: "CNY",
+						total_balance: "88.00",
+						granted_balance: "0.00",
+						topped_up_balance: "88.00",
+					},
+				],
+			});
+		};
+		const snapshots = await fetchAllUsages(
+			[
+				{
+					provider: "deepseek",
+					plan: "deepseek",
+					credential: { token: "sk-test" },
+				},
+			],
+			{
+				endpoints: {},
+				now: T0,
+				fetchImpl,
+				cache,
+				showResets: false,
+			},
+		);
+		expect(urls).toEqual(["https://api.deepseek.com/user/balance"]);
+		expect(snapshots[0]?.status).toBe("ok");
+		expect(snapshots[0]?.balance).toEqual({
+			kind: "prepaid",
+			amount: 88,
+			currency: "CNY",
+		});
+		expect(snapshots[0]?.windows).toEqual([]);
+	});
+});

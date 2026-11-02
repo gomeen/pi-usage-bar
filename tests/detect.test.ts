@@ -31,6 +31,10 @@ describe("PLAN_HOSTS", () => {
 			plan: "minimax-cn",
 			hosts: ["api.minimaxi.com"],
 		});
+		expect(PLAN_HOSTS.deepseek).toEqual({
+			plan: "deepseek",
+			hosts: ["api.deepseek.com"],
+		});
 	});
 });
 
@@ -119,6 +123,20 @@ describe("detectRoute: builtin table", () => {
 		});
 		expect(
 			detectRoute("openai-codex", "https://api.openai.com/v1", noMap),
+		).toEqual({
+			plan: "relay",
+			source: "relay-probe",
+		});
+	});
+
+	it("deepseek matches its first-party host only", () => {
+		expect(detectRoute("deepseek", "https://api.deepseek.com", noMap)).toEqual({
+			plan: "deepseek",
+			source: "builtin",
+		});
+		// A foreign host bills by the proxy, not the DeepSeek account (issue 008).
+		expect(
+			detectRoute("deepseek", "https://api.siliconflow.cn/v1", noMap),
 		).toEqual({
 			plan: "relay",
 			source: "relay-probe",

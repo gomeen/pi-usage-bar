@@ -209,6 +209,7 @@ describe("resolveEndpointOverrides", () => {
 			PI_MINIMAX_CN_USAGE_ENDPOINT: "https://d.example/usage",
 			PI_MINIMAX_LEGACY_USAGE_ENDPOINT: "https://e.example/usage",
 			PI_MINIMAX_CN_LEGACY_USAGE_ENDPOINT: "https://f.example/usage",
+			PI_DEEPSEEK_USAGE_ENDPOINT: "https://g.example/balance",
 		};
 		expect(resolveEndpointOverrides(env)).toEqual({
 			zai: "https://a.example/usage",
@@ -217,6 +218,7 @@ describe("resolveEndpointOverrides", () => {
 			"minimax-cn": "https://d.example/usage",
 			"minimax-legacy": "https://e.example/usage",
 			"minimax-cn-legacy": "https://f.example/usage",
+			deepseek: "https://g.example/balance",
 		});
 	});
 

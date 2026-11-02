@@ -56,7 +56,10 @@ function describeSnapshot(s: UsageSnapshot): string[] {
 		lines.push(`${w.label}: ${pct}   resets ${reset}`);
 	}
 	if (s.balance) {
-		lines.push(`Balance: ${s.balance.amount.toFixed(2)} (${s.balance.kind})`);
+		const currency = s.balance.currency ? ` ${s.balance.currency}` : "";
+		lines.push(
+			`Balance: ${s.balance.amount.toFixed(2)}${currency} (${s.balance.kind})`,
+		);
 	}
 	if (s.announcement) {
 		lines.push(`Announcement: ${s.announcement.text}`);
@@ -158,8 +161,9 @@ const SETTINGS: readonly Setting[] = [
 	},
 	{
 		id: "show_balance",
-		label: "Relay balance",
-		description: "Query and display the remaining balance for relay providers.",
+		label: "Balances",
+		description:
+			"Query and display remaining balances (relay providers and DeepSeek).",
 		read: (c) => (c.show_balance ? "On" : "Off"),
 		write: (c, v) => {
 			c.show_balance = v === "On";
@@ -170,7 +174,7 @@ const SETTINGS: readonly Setting[] = [
 		id: "currency",
 		label: "Currency symbol",
 		description:
-			"Symbol shown next to relay balances; this does not convert amounts.",
+			"Symbol shown next to relay balances; DeepSeek uses the account's own currency.",
 		read: (c) => c.currency,
 		write: (c, v) => {
 			c.currency = v;

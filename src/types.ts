@@ -14,6 +14,7 @@ export type PlanKind =
 	| "zai-cn"
 	| "minimax"
 	| "minimax-cn"
+	| "deepseek"
 	| "relay";
 
 /** A single quota window (e.g. the 5h session window or the 7d weekly window). */
@@ -34,9 +35,19 @@ export interface QuotaWindow {
 
 /** A monetary amount attached to a snapshot. Raw number; render applies currency. */
 export interface Balance {
-	kind: "relay" | "credits";
+	/**
+	 * `relay`: one-api/new-api station or Sub2API site balance;
+	 * `prepaid`: first-party pay-as-you-go balance (DeepSeek);
+	 * `credits`: Codex credits.
+	 */
+	kind: "relay" | "prepaid" | "credits";
 	/** Raw amount in the account's quota currency (e.g. 200 or 12.5). */
 	amount: number;
+	/**
+	 * ISO currency code reported by the API (DeepSeek: "CNY"/"USD"). When
+	 * absent (relay probes) render falls back to `config.currency`.
+	 */
+	currency?: string;
 }
 
 /** Official Codex reset announcement (codex-resets.com), already pre-formatted. */
