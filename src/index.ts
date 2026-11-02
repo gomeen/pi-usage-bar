@@ -8,7 +8,7 @@ import type {
 } from "@earendil-works/pi-coding-agent";
 import { FileCache } from "./cache.js";
 import { loadConfig, resolveEndpointOverrides } from "./config.js";
-import { detectRoute, PLAN_HOSTS } from "./detect.js";
+import { detectRoute, firstPartyExpansion, PLAN_HOSTS } from "./detect.js";
 import { runUsageCommand } from "./pi/commands.js";
 import {
 	type RegistryLike,
@@ -117,6 +117,20 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 		if (active) candidates.add(active);
 		for (const id of Object.keys(PLAN_HOSTS)) candidates.add(id);
 		for (const id of Object.keys(state.config.providerMap)) candidates.add(id);
+		// Custom providers on first-party prepaid hosts (issue 019 amendment):
+		// their balance is a permanent citizen like the builtin plans, not a
+		// candidate only while active. Narrow by design — only exact
+		// FIRST_PARTY_HOSTS hosts; relay candidates stay opt-in (providerMap).
+		const getIds = registry.getRegisteredProviderIds;
+		if (typeof getIds === "function") {
+			const known = getIds.call(registry);
+			const baseUrlOf = (id: string): string | undefined =>
+				(registry.getProvider(id) as { baseUrl?: string } | undefined)
+					?.baseUrl ?? undefined;
+			for (const id of firstPartyExpansion(known, baseUrlOf)) {
+				candidates.add(id);
+			}
+		}
 
 		const filter = state.config.display.providers;
 		return Promise.all(

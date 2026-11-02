@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { detectRoute, PLAN_HOSTS, planDisplayLabel } from "../src/detect.js";
+import {
+	detectRoute,
+	firstPartyExpansion,
+	firstPartyHostPlan,
+	PLAN_HOSTS,
+	planDisplayLabel,
+} from "../src/detect.js";
 import type { UsageBarConfig } from "../src/types.js";
 
 const noMap: UsageBarConfig["providerMap"] = {};
@@ -230,5 +236,40 @@ describe("planDisplayLabel", () => {
 		expect(planDisplayLabel("kimi")).toBe("Kimi");
 		expect(planDisplayLabel("kimi-cn")).toBe("Kimi CN");
 		expect(planDisplayLabel("relay")).toBe("Relay");
+	});
+});
+
+describe("first-party host expansion (issue 019 amendment)", () => {
+	it("firstPartyHostPlan resolves only exact first-party Kimi hosts", () => {
+		expect(firstPartyHostPlan("https://api.moonshot.cn/anthropic")).toBe(
+			"kimi-cn",
+		);
+		expect(firstPartyHostPlan("https://api.moonshot.ai/v1")).toBe("kimi");
+		// Hostnames are lowercased before the lookup.
+		expect(firstPartyHostPlan("https://API.MOONSHOT.CN/anthropic")).toBe(
+			"kimi-cn",
+		);
+		// Subdomains and lookalikes are not first-party.
+		expect(firstPartyHostPlan("https://fake.api.moonshot.cn/v1")).toBeNull();
+		expect(firstPartyHostPlan("https://moonshot.cn.example.com/v1")).toBeNull();
+		// Absent, blank, and unparseable baseUrls give nothing to trust.
+		expect(firstPartyHostPlan(undefined)).toBeNull();
+		expect(firstPartyHostPlan("   ")).toBeNull();
+		expect(firstPartyHostPlan("not a url")).toBeNull();
+	});
+
+	it("firstPartyExpansion keeps only ids on first-party hosts", () => {
+		const baseUrls: Record<string, string | undefined> = {
+			kimi: "https://api.moonshot.cn/anthropic",
+			"my-kimi": "https://api.moonshot.ai/v1",
+			"my-relay": "https://relay.example.com/v1",
+			builtin: "https://api.deepseek.com",
+			broken: "not a url",
+		};
+		expect(
+			firstPartyExpansion(Object.keys(baseUrls), (id) => baseUrls[id]),
+		).toEqual(["kimi", "my-kimi"]);
+		// An empty registry expands to nothing.
+		expect(firstPartyExpansion([], () => undefined)).toEqual([]);
 	});
 });

@@ -39,6 +39,24 @@ for v1 ("后续版本再议").
   scope: no documented balance/usage endpoint; would be a windows-shaped
   plan anyway.
 
+## Amendment (2026-11-02, all-mode visibility)
+
+First release only made a first-party-host custom id visible while it was
+the ACTIVE provider: `allTargets` candidates are active + builtin ids +
+providerMap keys, and an inactive custom `kimi` id is none of those — the
+balance vanished the moment the user switched to another model (their
+providerMap only listed the relays).
+
+Fix: `ModelRegistry.getRegisteredProviderIds()` (documented pi API) feeds a
+new pure `firstPartyExpansion(ids, getBaseUrl)` in detect.ts — ids whose
+registered baseUrl host is in `FIRST_PARTY_HOSTS` join the candidates
+without a manual providerMap entry. Still narrow by design: only prepaid
+hosts; relay candidates stay opt-in. Manual providerMap continues to win.
+
+Regression: tests/detect.test.ts `first-party host expansion` block (the
+`pi --provider kimi --model kimi-k3 --usage` active path was verified live
+both before and after the change).
+
 ## Resolution
 
 Implemented 2026-02: `src/providers/kimi.ts` adapter (deepseek-style pure

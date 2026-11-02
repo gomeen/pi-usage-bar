@@ -65,6 +65,38 @@ export type DetectedRoute = {
 	source: "manual" | "builtin" | "relay-probe";
 };
 
+/**
+ * Plan for a baseUrl whose host is a known first-party Kimi host, else null.
+ * Shared by detectRoute (step 3) and the all-mode candidate expansion in the
+ * pi entry: an id pointing at a first-party prepaid host is enumerated
+ * without a manual providerMap entry (issue 019 amendment).
+ */
+export function firstPartyHostPlan(
+	baseUrl: string | undefined,
+): PlanKind | null {
+	if (baseUrl === undefined || baseUrl.trim() === "") return null;
+	try {
+		const host = new URL(baseUrl).hostname.toLowerCase();
+		const plan = FIRST_PARTY_HOSTS[host];
+		return plan ?? null;
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * Ids from `ids` whose registered baseUrl points at a first-party prepaid
+ * host (issue 019 amendment): they join the all-mode candidates so their
+ * balance shows even while another provider is active. Pure — the caller
+ * adapts the registry to a baseUrl getter.
+ */
+export function firstPartyExpansion(
+	ids: readonly string[],
+	getBaseUrl: (id: string) => string | undefined,
+): string[] {
+	return ids.filter((id) => firstPartyHostPlan(getBaseUrl(id)) !== null);
+}
+
 function isPlainObject(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -126,10 +158,8 @@ export function detectRoute(
 
 	// 3. Custom id whose baseUrl host is a known first-party API host: the
 	// key bills that vendor's own account (issue 019).
-	if (host !== null && host !== undefined) {
-		const plan = FIRST_PARTY_HOSTS[host];
-		if (plan !== undefined) return { plan, source: "builtin" };
-	}
+	const hostPlan = firstPartyHostPlan(baseUrl);
+	if (hostPlan !== null) return { plan: hostPlan, source: "builtin" };
 
 	// 4. Relay auto-probe catches all: custom ids and proxied builtins.
 	return { plan: "relay", source: "relay-probe" };

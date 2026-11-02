@@ -8,6 +8,8 @@ import type { ProviderCredential } from "../types.js";
 export interface RegistryLike {
 	getProvider(provider: string): unknown;
 	getProviderAuthStatus(provider: string): { configured: boolean } | undefined;
+	/** Optional: pi 1.4+ enumerates registered providers for all-mode expansion. */
+	getRegisteredProviderIds?(): readonly string[];
 	getProviderAuth(provider: string): Promise<
 		| {
 				auth?: {
