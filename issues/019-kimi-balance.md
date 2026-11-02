@@ -47,11 +47,15 @@ providerMap keys, and an inactive custom `kimi` id is none of those — the
 balance vanished the moment the user switched to another model (their
 providerMap only listed the relays).
 
-Fix: `ModelRegistry.getRegisteredProviderIds()` (documented pi API) feeds a
-new pure `firstPartyExpansion(ids, getBaseUrl)` in detect.ts — ids whose
+Fix: `ModelRegistry.getAll()` (documented pi API — every known model,
+including models.json entries) feeds a new pure
+`firstPartyExpansion(ids, getBaseUrl)` in detect.ts — provider ids whose
 registered baseUrl host is in `FIRST_PARTY_HOSTS` join the candidates
-without a manual providerMap entry. Still narrow by design: only prepaid
-hosts; relay candidates stay opt-in. Manual providerMap continues to win.
+without a manual providerMap entry. Note: `getRegisteredProviderIds()`
+was tried first and is WRONG for this — it only lists providers
+registered by extensions at runtime, not models.json entries. Still
+narrow by design: only prepaid hosts; relay candidates stay opt-in.
+Manual providerMap continues to win.
 
 Regression: tests/detect.test.ts `first-party host expansion` block (the
 `pi --provider kimi --model kimi-k3 --usage` active path was verified live

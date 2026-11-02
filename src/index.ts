@@ -42,6 +42,24 @@ import type {
 
 const EXTENSION_ID = "@gomeen/pi-usage-bar";
 
+/**
+ * Ids on first-party prepaid hosts (issue 019 amendment), discovered from
+ * every known model — models.json custom ids live in getAll(), while
+ * getRegisteredProviderIds() only covers extension-registered providers.
+ * Empty for registries without getAll (older pi).
+ */
+export function firstPartyCandidateIds(registry: RegistryLike): string[] {
+	const getAll = registry.getAll;
+	if (typeof getAll !== "function") return [];
+	const providerIds = new Set(
+		getAll.call(registry).map((model) => model.provider),
+	);
+	const baseUrlOf = (id: string): string | undefined =>
+		(registry.getProvider(id) as { baseUrl?: string } | undefined)?.baseUrl ??
+		undefined;
+	return firstPartyExpansion([...providerIds], baseUrlOf);
+}
+
 interface State {
 	ctx: ExtensionContext | undefined;
 	config: UsageBarConfig;
@@ -121,15 +139,8 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 		// their balance is a permanent citizen like the builtin plans, not a
 		// candidate only while active. Narrow by design — only exact
 		// FIRST_PARTY_HOSTS hosts; relay candidates stay opt-in (providerMap).
-		const getIds = registry.getRegisteredProviderIds;
-		if (typeof getIds === "function") {
-			const known = getIds.call(registry);
-			const baseUrlOf = (id: string): string | undefined =>
-				(registry.getProvider(id) as { baseUrl?: string } | undefined)
-					?.baseUrl ?? undefined;
-			for (const id of firstPartyExpansion(known, baseUrlOf)) {
-				candidates.add(id);
-			}
+		for (const id of firstPartyCandidateIds(registry)) {
+			candidates.add(id);
 		}
 
 		const filter = state.config.display.providers;
