@@ -10,6 +10,7 @@ Subscription plan usage bars for the [Pi](https://github.com/earendil-works/pi) 
 - **Four looks**: aurora block (default), aurora thin, ring (`◔ 14% 5h · resets 1h07m`), and classic battery — all switchable live
 - **Relay balances**: custom providers on one-api/new-api relays — or Sub2API-style sites exposing `/v1/usage` — automatically show their remaining balance (`$200.00`)
 - **DeepSeek balance**: the `deepseek` provider shows the account's remaining prepaid balance (`¥110.00`), in the currency the API reports
+- **Kimi / Moonshot balance**: the `moonshotai` / `moonshotai-cn` providers — or any custom id on `api.moonshot.ai` / `api.moonshot.cn` — show the Open Platform account's available balance, in the station's own currency
 - **Next official reset** for Codex plans via [codex-resets.com](https://codex-resets.com) — shown only while a reset is announced ahead of time (`↻ Reset announced · in 1h10m`)
 - **`/usage`** opens a single menu for provider details, **Appearance**, **Display**, and **Advanced**, with changes applied to the actual usage bar; **`--usage`** prints a one-line JSON smoke test
 
@@ -22,6 +23,7 @@ Subscription plan usage bars for the [Pi](https://github.com/earendil-works/pi) 
 | ZAI Coding Plan (Global/China) | `zai`, `zai-coding-cn` | API key |
 | MiniMax Token Plan (Global/China) | `minimax`, `minimax-cn` | API key |
 | DeepSeek (prepaid balance) | `deepseek` | API key |
+| Kimi / Moonshot Open Platform (prepaid balance) | `moonshotai` (global), `moonshotai-cn` (China), custom ids on `api.moonshot.ai` / `api.moonshot.cn` | API key |
 | Relays (one-api/new-api, Sub2API-style `/v1/usage`) | any custom provider id | API key |
 
 Custom provider ids (proxies, cc-switch entries) are auto-probed for relay billing endpoints — the one-api/new-api dashboard family first, then a Sub2API-style `{site}/v1/usage` fallback; map them to a plan explicitly with `providerMap`.
@@ -54,10 +56,10 @@ Everything lives in `~/.pi/agent/usage-bar.json` (sparse — only non-default ke
 | `refresh_minutes` | `2` | poll interval |
 | `show_resets` | `true` | codex-resets.com announcements |
 | `show_reset_countdown` | `false` | per-window `⏰` reset countdowns |
-| `show_balance` | `true` | balance probes (relays + DeepSeek) |
-| `currency` | `"$"` | symbol for relay balances; DeepSeek shows the currency its API reports |
+| `show_balance` | `true` | balance probes (relays + DeepSeek + Kimi) |
+| `currency` | `"$"` | symbol for relay balances; DeepSeek and Kimi show the currency their API/station reports |
 
-First-party monitoring endpoints can be overridden with `PI_ZAI_USAGE_ENDPOINT`, `PI_ZAI_CODING_CN_USAGE_ENDPOINT`, `PI_MINIMAX_USAGE_ENDPOINT`, `PI_MINIMAX_CN_USAGE_ENDPOINT` (plus legacy variants), and `PI_DEEPSEEK_USAGE_ENDPOINT`. **The provider token is sent as a bearer token to the configured endpoint — only override with endpoints you trust.**
+First-party monitoring endpoints can be overridden with `PI_ZAI_USAGE_ENDPOINT`, `PI_ZAI_CODING_CN_USAGE_ENDPOINT`, `PI_MINIMAX_USAGE_ENDPOINT`, `PI_MINIMAX_CN_USAGE_ENDPOINT` (plus legacy variants), `PI_DEEPSEEK_USAGE_ENDPOINT`, `PI_KIMI_USAGE_ENDPOINT`, and `PI_KIMI_CN_USAGE_ENDPOINT`. **The provider token is sent as a bearer token to the configured endpoint — only override with endpoints you trust.**
 
 ## Security
 

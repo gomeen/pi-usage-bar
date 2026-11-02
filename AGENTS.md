@@ -40,6 +40,7 @@ The domain model `UsageSnapshot` (src/types.ts) flows through everything. Three 
 | ZAI API                             | `research/zai-usage-api.md`                                                                     |
 | MiniMax API                         | `research/minimax-usage-api.md`                                                                 |
 | DeepSeek API                        | `research/deepseek-usage-api.md`                                                                |
+| Kimi API                            | `research/kimi-usage-api.md` — custom ids on first-party Kimi hosts route via `FIRST_PARTY_HOSTS` (issue 019 amendment to 008) |
 | pi extension API                    | `research/pi-extension-api.md`                                                                  |
 | Style (looks, colors, formats)      | `research/cs-style-spec.md` + `issues/010-style-prototype.md`                                   |
 | Detection & providerMap             | `issues/008-provider-detection-mapping-spec.md`                                                 |

@@ -35,6 +35,14 @@ describe("PLAN_HOSTS", () => {
 			plan: "deepseek",
 			hosts: ["api.deepseek.com"],
 		});
+		expect(PLAN_HOSTS.moonshotai).toEqual({
+			plan: "kimi",
+			hosts: ["api.moonshot.ai"],
+		});
+		expect(PLAN_HOSTS["moonshotai-cn"]).toEqual({
+			plan: "kimi-cn",
+			hosts: ["api.moonshot.cn"],
+		});
 	});
 });
 
@@ -161,7 +169,10 @@ describe("detectRoute: host mismatch and custom ids", () => {
 		});
 	});
 
-	it("routes unknown custom ids to relay auto-probe even on vendor hosts", () => {
+	it("routes unknown custom ids to relay auto-probe on hosts outside the first-party table", () => {
+		// open.bigmodel.cn is a vendor host but not in FIRST_PARTY_HOSTS
+		// (issue 019): the ZAI adapter needs the zai-coding-cn id's own
+		// auth shape, so an arbitrary custom id there still probes as a relay.
 		expect(
 			detectRoute(
 				"cc-switch-zhipu-glm",
@@ -174,6 +185,37 @@ describe("detectRoute: host mismatch and custom ids", () => {
 	it("returns null only for an empty provider id", () => {
 		expect(detectRoute("", undefined, noMap)).toBeNull();
 	});
+
+	it("maps a custom id on a first-party Kimi host to the Kimi plan (issue 019)", () => {
+		// The real case behind issue 019: a custom "kimi" provider whose
+		// baseUrl is the Moonshot CN anthropic surface — its API key bills the
+		// moonshot.cn account, so the relay probe would only ever 404.
+		expect(
+			detectRoute("kimi", "https://api.moonshot.cn/anthropic", noMap),
+		).toEqual({ plan: "kimi-cn", source: "builtin" });
+		expect(detectRoute("my-kimi", "https://api.moonshot.ai/v1", noMap)).toEqual(
+			{ plan: "kimi", source: "builtin" },
+		);
+		// Host compare is hostname-exact: subdomains and lookalikes stay relays.
+		expect(
+			detectRoute("kimi-proxy", "https://fake.api.moonshot.cn/v1", noMap),
+		).toEqual({ plan: "relay", source: "relay-probe" });
+		// Absent or unparseable baseUrl gives no host to trust -> relay probe.
+		expect(detectRoute("kimi", undefined, noMap)).toEqual({
+			plan: "relay",
+			source: "relay-probe",
+		});
+		expect(detectRoute("kimi", "not a url", noMap)).toEqual({
+			plan: "relay",
+			source: "relay-probe",
+		});
+		// A manual providerMap entry still outranks the host table.
+		expect(
+			detectRoute("kimi", "https://api.moonshot.cn/anthropic", {
+				kimi: { type: "relay" },
+			}),
+		).toEqual({ plan: "relay", source: "manual" });
+	});
 });
 
 describe("planDisplayLabel", () => {
@@ -184,6 +226,9 @@ describe("planDisplayLabel", () => {
 		expect(planDisplayLabel("zai-cn")).toBe("ZAI CN");
 		expect(planDisplayLabel("minimax")).toBe("MiniMax");
 		expect(planDisplayLabel("minimax-cn")).toBe("MiniMax CN");
+		expect(planDisplayLabel("deepseek")).toBe("DeepSeek");
+		expect(planDisplayLabel("kimi")).toBe("Kimi");
+		expect(planDisplayLabel("kimi-cn")).toBe("Kimi CN");
 		expect(planDisplayLabel("relay")).toBe("Relay");
 	});
 });

@@ -163,7 +163,7 @@ const SETTINGS: readonly Setting[] = [
 		id: "show_balance",
 		label: "Balances",
 		description:
-			"Query and display remaining balances (relay providers and DeepSeek).",
+			"Query and display remaining balances (relay providers, DeepSeek, and Kimi).",
 		read: (c) => (c.show_balance ? "On" : "Off"),
 		write: (c, v) => {
 			c.show_balance = v === "On";
@@ -174,7 +174,7 @@ const SETTINGS: readonly Setting[] = [
 		id: "currency",
 		label: "Currency symbol",
 		description:
-			"Symbol shown next to relay balances; DeepSeek uses the account's own currency.",
+			"Symbol shown next to relay balances; DeepSeek and Kimi use the account's own currency.",
 		read: (c) => c.currency,
 		write: (c, v) => {
 			c.currency = v;

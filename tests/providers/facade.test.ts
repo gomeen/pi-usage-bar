@@ -253,3 +253,47 @@ describe("fetchAllUsages deepseek (issue 018)", () => {
 		expect(snapshots[0]?.windows).toEqual([]);
 	});
 });
+
+describe("fetchAllUsages kimi (issue 019)", () => {
+	it("routes the kimi plans to the station-specific balance adapter", async () => {
+		const cache = newCache();
+		const urls: string[] = [];
+		const fetchImpl: FetchLike = async (url) => {
+			urls.push(String(url));
+			return jsonRes({
+				code: 0,
+				data: {
+					available_balance: 20.5,
+					voucher_balance: 10.5,
+					cash_balance: 10,
+				},
+				scode: "0x0",
+				status: true,
+			});
+		};
+		const snapshots = await fetchAllUsages(
+			[
+				{
+					provider: "kimi",
+					plan: "kimi-cn",
+					credential: { token: "sk-test" },
+				},
+			],
+			{
+				endpoints: {},
+				now: T0,
+				fetchImpl,
+				cache,
+				showResets: false,
+			},
+		);
+		expect(urls).toEqual(["https://api.moonshot.cn/v1/users/me/balance"]);
+		expect(snapshots[0]?.status).toBe("ok");
+		expect(snapshots[0]?.balance).toEqual({
+			kind: "prepaid",
+			amount: 20.5,
+			currency: "CNY",
+		});
+		expect(snapshots[0]?.windows).toEqual([]);
+	});
+});

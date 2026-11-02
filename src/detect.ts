@@ -15,6 +15,8 @@ export const PLAN_KINDS: readonly PlanKind[] = [
 	"minimax",
 	"minimax-cn",
 	"deepseek",
+	"kimi",
+	"kimi-cn",
 	"relay",
 ];
 
@@ -39,6 +41,22 @@ export const PLAN_HOSTS: Record<string, { plan: PlanKind; hosts: string[] }> = {
 	minimax: { plan: "minimax", hosts: ["api.minimax.io"] },
 	"minimax-cn": { plan: "minimax-cn", hosts: ["api.minimaxi.com"] },
 	deepseek: { plan: "deepseek", hosts: ["api.deepseek.com"] },
+	moonshotai: { plan: "kimi", hosts: ["api.moonshot.ai"] },
+	"moonshotai-cn": { plan: "kimi-cn", hosts: ["api.moonshot.cn"] },
+};
+
+/**
+ * First-party hosts that route an UNMAPPED custom provider id to a plan
+ * (issue 019). A custom id whose baseUrl points at the vendor's own API host
+ * bills that vendor's account — the key IS a vendor key — so the relay probe
+ * would only ever 404. Deliberately narrow: only plans whose adapter
+ * authenticates with the provider's own API key (prepaid balances). Codex and
+ * Claude are excluded on purpose: their usage endpoints need the OAuth
+ * subscription token, which a custom id's API key cannot provide.
+ */
+export const FIRST_PARTY_HOSTS: Readonly<Record<string, PlanKind>> = {
+	"api.moonshot.ai": "kimi",
+	"api.moonshot.cn": "kimi-cn",
 };
 
 export type DetectedRoute = {
@@ -93,9 +111,9 @@ export function detectRoute(
 	}
 
 	// 2. Builtin id with a first-party host (case-insensitive hostname compare).
+	const host = baseUrlHost(baseUrl);
 	const builtin = PLAN_HOSTS[providerId];
 	if (builtin !== undefined) {
-		const host = baseUrlHost(baseUrl);
 		if (
 			host === undefined ||
 			builtin.hosts.some((h) => h.toLowerCase() === host)
@@ -106,7 +124,14 @@ export function detectRoute(
 		// billed — the proxy is. Do NOT claim the builtin plan (issue 008 §4).
 	}
 
-	// 3. Relay auto-probe catches all: custom ids and proxied builtins.
+	// 3. Custom id whose baseUrl host is a known first-party API host: the
+	// key bills that vendor's own account (issue 019).
+	if (host !== null && host !== undefined) {
+		const plan = FIRST_PARTY_HOSTS[host];
+		if (plan !== undefined) return { plan, source: "builtin" };
+	}
+
+	// 4. Relay auto-probe catches all: custom ids and proxied builtins.
 	return { plan: "relay", source: "relay-probe" };
 }
 
@@ -118,6 +143,8 @@ const PLAN_LABELS: Record<PlanKind, string> = {
 	minimax: "MiniMax",
 	"minimax-cn": "MiniMax CN",
 	deepseek: "DeepSeek",
+	kimi: "Kimi",
+	"kimi-cn": "Kimi CN",
 	relay: "Relay",
 };
 

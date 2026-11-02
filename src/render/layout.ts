@@ -24,6 +24,8 @@ const PLAN_NAMES: Record<PlanKind, string> = {
 	minimax: "MiniMax",
 	"minimax-cn": "MiniMax",
 	deepseek: "DeepSeek",
+	kimi: "Kimi",
+	"kimi-cn": "Kimi",
 	relay: "Relay",
 };
 
@@ -54,16 +56,22 @@ function relayDisplayName(provider: string): string {
 }
 
 /** Regional suffixes distinguish twins only when both are present. */
+/** Regional suffixes distinguish twins only when both are present. */
+const CN_TWINS: Partial<Record<PlanKind, PlanKind>> = {
+	"zai-cn": "zai",
+	"minimax-cn": "minimax",
+	"kimi-cn": "kimi",
+};
+
 function displayName(snap: UsageSnapshot, present: Set<PlanKind>): string {
 	if (snap.plan === "relay") {
 		return relayDisplayName(snap.provider);
 	}
 	const base = PLAN_NAMES[snap.plan];
-	const isCn = snap.plan === "zai-cn" || snap.plan === "minimax-cn";
-	if (!isCn) {
+	const twin = CN_TWINS[snap.plan];
+	if (twin === undefined) {
 		return base;
 	}
-	const twin = snap.plan === "zai-cn" ? "zai" : "minimax";
 	return present.has(twin) ? `${base} CN` : base;
 }
 

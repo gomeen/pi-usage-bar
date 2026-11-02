@@ -16,6 +16,7 @@ import type {
 import { createClaudeAdapter } from "./claude.js";
 import { createCodexAdapter } from "./codex.js";
 import { DeepSeekAdapter } from "./deepseek.js";
+import { KimiAdapter } from "./kimi.js";
 import { MinimaxAdapter } from "./minimax.js";
 import { probeRelayBalance } from "./relay.js";
 import { fetchResetAnnouncement } from "./resets.js";
@@ -93,6 +94,9 @@ function adapterFor(plan: PlanKind, provider: string): ProviderAdapter | null {
 			return new MinimaxAdapter(plan);
 		case "deepseek":
 			return new DeepSeekAdapter();
+		case "kimi":
+		case "kimi-cn":
+			return new KimiAdapter(plan);
 		case "relay":
 			return null;
 	}

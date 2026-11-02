@@ -10,6 +10,7 @@
 - **四种 look**：aurora 块条（默认）、aurora 细线、ring（`◔ 14% 5h · resets 1h07m`）、classic 电池条——全部可实时切换
 - **中转站余额**：one-api/new-api 系中转（或提供 `/v1/usage` 的 Sub2API 系站点）的自定义 provider 自动探测计费端点，显示剩余金额（`$200.00`）
 - **DeepSeek 余额**：`deepseek` provider 显示账户剩余预付余额（`¥110.00`），货币符号按 API 返回值显示
+- **Kimi / Moonshot 余额**：`moonshotai` / `moonshotai-cn` provider——或 baseUrl 在 `api.moonshot.ai` / `api.moonshot.cn` 上的任意自定义 id——显示开放平台账户可用余额，货币按所在站点币种显示
 - **下次官方重置预告**：Codex 套餐接入 [codex-resets.com](https://codex-resets.com)，仅在站点发布了将来重置预告时显示（`↻ Reset announced · in 1h10m`），不再回显已经发生过的重置
 - **`/usage`** 单一入口查看套餐详情或进入 **Appearance / Display / Advanced**，修改直接作用于实际用量条，**`--usage`** 一行 JSON 冒烟测试
 
@@ -22,6 +23,7 @@
 | ZAI Coding Plan（国际/国内） | `zai`、`zai-coding-cn` | API key |
 | MiniMax Token Plan（国际/国内） | `minimax`、`minimax-cn` | API key |
 | DeepSeek（预付余额） | `deepseek` | API key |
+| Kimi / Moonshot 开放平台（预付余额） | `moonshotai`（国际）、`moonshotai-cn`（国内）、baseUrl 在 `api.moonshot.ai` / `api.moonshot.cn` 上的自定义 id | API key |
 | 中转站（one-api/new-api 系、Sub2API 系 `/v1/usage`） | 任意自定义 provider id | API key |
 
 自定义 provider（代理、cc-switch 条目）会自动探测中转计费端点——先试 one-api/new-api 的 dashboard 端点族，再回退到 Sub2API 风格的 `{site}/v1/usage`；也可以用 `providerMap` 显式映射到某个套餐。
@@ -54,10 +56,10 @@ pi install npm:@gomeen/pi-usage-bar
 | `refresh_minutes` | `2` | 轮询间隔（分钟） |
 | `show_resets` | `true` | 官方重置公告 |
 | `show_reset_countdown` | `false` | 每个窗口的 `⏰` 重置倒计时 |
-| `show_balance` | `true` | 余额探测（中转 + DeepSeek） |
-| `currency` | `"$"` | 中转余额货币符号；DeepSeek 按 API 返回的币种显示 |
+| `show_balance` | `true` | 余额探测（中转 + DeepSeek + Kimi） |
+| `currency` | `"$"` | 中转余额货币符号；DeepSeek 和 Kimi 按 API/站点币种显示 |
 
-第一方监控端点可用环境变量覆盖：`PI_ZAI_USAGE_ENDPOINT`、`PI_ZAI_CODING_CN_USAGE_ENDPOINT`、`PI_MINIMAX_USAGE_ENDPOINT`、`PI_MINIMAX_CN_USAGE_ENDPOINT`（含 legacy 变体）、`PI_DEEPSEEK_USAGE_ENDPOINT`。**provider token 会作为 Bearer 发送到所配置的端点——只覆盖你信任的端点。**
+第一方监控端点可用环境变量覆盖：`PI_ZAI_USAGE_ENDPOINT`、`PI_ZAI_CODING_CN_USAGE_ENDPOINT`、`PI_MINIMAX_USAGE_ENDPOINT`、`PI_MINIMAX_CN_USAGE_ENDPOINT`（含 legacy 变体）、`PI_DEEPSEEK_USAGE_ENDPOINT`、`PI_KIMI_USAGE_ENDPOINT`、`PI_KIMI_CN_USAGE_ENDPOINT`。**provider token 会作为 Bearer 发送到所配置的端点——只覆盖你信任的端点。**
 
 ## 安全
 

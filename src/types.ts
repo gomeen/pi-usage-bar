@@ -15,6 +15,8 @@ export type PlanKind =
 	| "minimax"
 	| "minimax-cn"
 	| "deepseek"
+	| "kimi"
+	| "kimi-cn"
 	| "relay";
 
 /** A single quota window (e.g. the 5h session window or the 7d weekly window). */
