@@ -7,6 +7,7 @@
 ## 功能
 
 - **footer 用量条**：当前模型对应套餐的两个配额窗口（会话 + 周窗），每格渐变 bar + `⏰` 重置倒计时
+- **输入框角标**：git 分支与上下文用量（`main · 60.8%`）嵌入输入框顶边框右侧，当前模型名右对齐在用量条第一行——替代 pi 自带 footer 的路径/统计行，整个 footer 只剩两行
 - **四种 look**：aurora 块条（默认）、aurora 细线、ring（`◔ 14% 5h · resets 1h07m`）、classic 电池条——全部可实时切换
 - **中转站余额**：one-api/new-api 系中转（或提供 `/v1/usage` 的 Sub2API 系站点）的自定义 provider 自动探测计费端点，显示剩余金额（`$200.00`）
 - **DeepSeek 余额**：`deepseek` provider 显示账户剩余预付余额（`¥110.00`），货币符号按 API 返回值显示

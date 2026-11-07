@@ -7,6 +7,7 @@ Subscription plan usage bars for the [Pi](https://github.com/earendil-works/pi) 
 ## What you get
 
 - **Footer usage bars** for the plan of your active model — two quota windows (session + weekly) with per-cell gradient bars and `⏰` reset countdowns
+- **Editor chip**: the git branch and context usage (`main · 60.8%`) sit in the input editor's top border, right-aligned; the current model label rides the first usage row's right edge — replacing pi's stock footer rows (path, token stats) for a two-line footer
 - **Four looks**: aurora block (default), aurora thin, ring (`◔ 14% 5h · resets 1h07m`), and classic battery — all switchable live
 - **Relay balances**: custom providers on one-api/new-api relays — or Sub2API-style sites exposing `/v1/usage` — automatically show their remaining balance (`$200.00`)
 - **DeepSeek balance**: the `deepseek` provider shows the account's remaining prepaid balance (`¥110.00`), in the currency the API reports
