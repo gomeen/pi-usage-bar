@@ -1,13 +1,30 @@
 /**
- * Display adapter (issue: never hijack pi's footer).
- * - Single line → setStatus: shares the standard footer next to pi's own info.
- * - Multiple lines → setWidget belowEditor: a persistent block under the
- *   editor, width-aware, leaving the built-in footer (model info, other
- *   extensions) fully intact. setFooter is deliberately never used.
+ * Display adapter (D3 takeover, prototype/footer-merged-line.html).
+ *
+ * When pi exposes setFooter, we take the footer over completely: our rows
+ * (usage bars + right-aligned model on row one) replace pi's built-in footer
+ * content (pwd / token stats / model — dropped by the prototype decision),
+ * while other extensions' statuses keep their own line, mirroring pi's
+ * built-in behavior. On older pi builds without setFooter we fall back to
+ * the previous single-line/multi-line split below.
  */
-import type { Component } from "@earendil-works/pi-tui";
+
+import type {
+	ReadonlyFooterDataProvider,
+	Theme,
+} from "@earendil-works/pi-coding-agent";
+import type { Component, TUI } from "@earendil-works/pi-tui";
+import { truncateToWidth } from "@earendil-works/pi-tui";
 
 export const STATUS_KEY = "pi-usage-bar";
+
+/** Exact pi setFooter factory signature (types.d.ts L122) so ExtensionUIContext
+ * is structurally assignable to DisplayUIContext without casts. */
+type FooterFactory = (
+	tui: TUI,
+	theme: Theme,
+	data: ReadonlyFooterDataProvider,
+) => Component & { dispose?(): void };
 
 export interface DisplayUIContext {
 	setStatus(key: string, text: string | undefined): void;
@@ -16,9 +33,48 @@ export interface DisplayUIContext {
 		content:
 			| string[]
 			| undefined
-			| ((tui: unknown, theme: unknown) => Component & { dispose?(): void }),
+			| ((tui: TUI, theme: Theme) => Component & { dispose?(): void }),
 		options?: { placement?: "aboveEditor" | "belowEditor" },
 	): void;
+	/** Present on pi builds that allow full footer takeover (D3). */
+	setFooter?(factory: FooterFactory | undefined): void;
+}
+
+/** Mirror of pi's footer sanitize: one line, collapsed spaces. */
+function sanitizeStatusText(text: string): string {
+	return text
+		.replace(/[\r\n\t]/g, " ")
+		.replace(/ +/g, " ")
+		.trim();
+}
+
+function currentWidth(): number {
+	return process.stdout.columns && process.stdout.columns > 0
+		? process.stdout.columns
+		: 120;
+}
+
+/**
+ * The takeover footer: fresh rows every frame (the model label and the
+ * editor chip read live session state, so caching by width would freeze
+ * them), then other extensions' statuses on their own line.
+ */
+class TakeoverFooter implements Component {
+	constructor(
+		private build: (width: number) => string[],
+		private data: ReadonlyFooterDataProvider,
+	) {}
+	render(width: number): string[] {
+		const lines = this.build(width).filter((l) => l.trim().length > 0);
+		const statuses = Array.from(this.data.getExtensionStatuses().entries())
+			.sort(([a], [b]) => a.localeCompare(b))
+			.map(([, text]) => sanitizeStatusText(text));
+		if (statuses.length > 0) {
+			lines.push(truncateToWidth(statuses.join(" "), width, "…"));
+		}
+		return lines;
+	}
+	invalidate(): void {}
 }
 
 class BuilderComponent implements Component {
@@ -38,21 +94,31 @@ class BuilderComponent implements Component {
 }
 
 let widgetInstalled = false;
-
-function currentWidth(): number {
-	return process.stdout.columns && process.stdout.columns > 0
-		? process.stdout.columns
-		: 120;
-}
+let footerInstalled = false;
 
 /**
- * Publish rendered lines. One line goes to the shared footer status; more
- * than one becomes a belowEditor widget so pi's default footer survives.
+ * Publish rendered lines. On pi builds with setFooter, take the footer over
+ * (D3) — including while usage data is still loading, so the stock footer
+ * (pwd/stats/model, dropped by D3) never flashes and then disappears. On
+ * older pi builds without setFooter, fall back to the historical split: one
+ * line shares the standard footer status; more than one becomes a
+ * belowEditor widget so the built-in footer survives.
  */
 export function publishDisplay(
 	ctx: DisplayUIContext,
 	build: (width: number) => string[],
 ): void {
+	if (typeof ctx.setFooter === "function") {
+		if (widgetInstalled) {
+			ctx.setWidget(STATUS_KEY, undefined);
+			widgetInstalled = false;
+		}
+		ctx.setStatus(STATUS_KEY, undefined);
+		ctx.setFooter((_tui, _theme, data) => new TakeoverFooter(build, data));
+		footerInstalled = true;
+		return;
+	}
+
 	const initial = build(currentWidth()).filter((l) => l.trim().length > 0);
 	if (initial.length <= 1) {
 		if (widgetInstalled) {
@@ -76,5 +142,9 @@ export function clearDisplay(ctx: DisplayUIContext): void {
 	if (widgetInstalled) {
 		ctx.setWidget(STATUS_KEY, undefined);
 		widgetInstalled = false;
+	}
+	if (footerInstalled) {
+		if (typeof ctx.setFooter === "function") ctx.setFooter(undefined);
+		footerInstalled = false;
 	}
 }

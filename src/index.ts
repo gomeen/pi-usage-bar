@@ -15,18 +15,21 @@ import {
 	resolveCredential,
 	resolveCredentialAny,
 } from "./pi/credentials.js";
+import { installEditorChrome, removeEditorChrome } from "./pi/editor-chip.js";
 import {
 	clearDisplay,
 	type DisplayUIContext,
 	publishDisplay,
 	STATUS_KEY,
 } from "./pi/footer.js";
+import { cachedBranch, refreshBranch } from "./pi/git-branch.js";
 import { paletteFromPiTheme } from "./pi/theme.js";
 import {
 	type FetchTarget,
 	fetchAllUsages,
 	toFetchLike,
 } from "./providers/facade.js";
+import { appendRight, chipText, layoutChrome } from "./render/chrome.js";
 import { renderStatus } from "./render/layout.js";
 import {
 	applyColorOverrides,
@@ -68,6 +71,8 @@ interface State {
 	timer: ReturnType<typeof setInterval> | undefined;
 	inflight: AbortController | undefined;
 	renderQueued: boolean;
+	/** Last chrome layout (D3): shared between the footer row and the editor chip. */
+	chrome: { width: number; chip: string | null } | undefined;
 }
 
 export default function usageBarExtension(pi: ExtensionAPI): void {
@@ -86,6 +91,7 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 		timer: undefined,
 		inflight: undefined,
 		renderQueued: false,
+		chrome: undefined,
 	};
 
 	function registryOf(ctx: ExtensionContext): RegistryLike {
@@ -172,6 +178,7 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 	async function refresh(): Promise<void> {
 		const ctx = state.ctx;
 		if (!ctx || state.inflight) return;
+		if (ctx.mode === "tui") refreshBranch(ctx.cwd); // chip branch refresh piggybacks
 		const controller = new AbortController();
 		state.inflight = controller;
 		try {
@@ -253,29 +260,78 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 		state.renderQueued = true;
 		queueMicrotask(() => {
 			state.renderQueued = false;
-			if (state.ctx?.mode !== "tui") return;
-			const pal = palette(state.ctx);
-			const build = (width: number): string[] =>
-				state.snapshots.length === 0
-					? []
-					: renderStatus(
-							state.snapshots,
-							state.config,
-							width,
-							pal,
-							Date.now(),
-							{
-								provider: state.ctx?.model?.provider ?? "",
-								plan:
-									detectRoute(
-										state.ctx?.model?.provider ?? "",
-										state.ctx?.model?.baseUrl,
-										state.config.providerMap,
-									)?.plan ?? null,
-							},
-						);
-			publishDisplay(state.ctx.ui as DisplayUIContext, build);
+			const current = state.ctx;
+			if (current?.mode !== "tui") return;
+			const pal = palette(current);
+			const build = (width: number): string[] => {
+				const usage =
+					state.snapshots.length === 0
+						? []
+						: renderStatus(
+								state.snapshots,
+								state.config,
+								width,
+								pal,
+								Date.now(),
+								{
+									provider: state.ctx?.model?.provider ?? "",
+									plan:
+										detectRoute(
+											state.ctx?.model?.provider ?? "",
+											state.ctx?.model?.baseUrl,
+											state.config.providerMap,
+										)?.plan ?? null,
+								},
+							);
+				// D3 chrome: model right-aligned on row one, legend chip for the
+				// editor top border. The chip survives even with no usage data
+				// (ctx% comes from the pi session, not from our fetches).
+				const layout = layoutChrome({
+					line1: usage[0] ?? "",
+					width,
+					model: current.model
+						? {
+								id: current.model.id,
+								thinkingLevel: current.thinkingLevel,
+								reasoning: current.model.reasoning,
+							}
+						: null,
+					chip: {
+						branch: cachedBranch(),
+						percent: current.getContextUsage()?.percent ?? null,
+					},
+					palette: pal,
+				});
+				state.chrome = { width, chip: layout.chip };
+				const lines = [...usage];
+				const first = lines[0];
+				if (first !== undefined && layout.modelRight !== null) {
+					lines[0] = appendRight(first, layout.modelRight, width);
+				}
+				return lines;
+			};
+			publishDisplay(current.ui as DisplayUIContext, build);
 		});
+	}
+
+	/**
+	 * Editor chip source. The model-on-row-1 decision lives in the footer
+	 * builder (it owns the real row width); until the footer recomputes at a
+	 * new width this falls back to the base chip — a one-frame difference at
+	 * ladder boundaries during resizes.
+	 */
+	function chipProvider(width: number): string | null {
+		const ctx = state.ctx;
+		if (ctx?.mode !== "tui") return null;
+		const memo = state.chrome;
+		if (memo !== undefined && memo.width === width) return memo.chip;
+		return chipText(
+			{
+				branch: cachedBranch(),
+				percent: ctx.getContextUsage()?.percent ?? null,
+			},
+			palette(ctx),
+		);
 	}
 
 	function schedule(intervalMs: number): void {
@@ -297,6 +353,13 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 		}
 		if (ctx.mode !== "tui") return;
 
+		// D3: chip editor + footer takeover from frame one (before the first
+		// fetch lands) so the stock footer never flashes and then vanishes.
+		// A failed install silently keeps the built-in editor (usage footer
+		// still works standalone); see installEditorChrome.
+		installEditorChrome(ctx.ui, chipProvider);
+		refreshBranch(ctx.cwd);
+		render();
 		void refresh();
 		schedule(state.config.refresh_minutes * 60_000);
 	});
@@ -310,6 +373,12 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 		void refresh();
 	});
 
+	pi.on("thinking_level_select", () => {
+		// The model label on row one carries the level.
+		if (state.ctx?.mode !== "tui") return;
+		render();
+	});
+
 	pi.on("session_shutdown", () => {
 		if (state.timer) {
 			clearInterval(state.timer);
@@ -318,6 +387,7 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 		state.inflight?.abort();
 		state.inflight = undefined;
 		if (state.ctx?.mode === "tui") {
+			removeEditorChrome(state.ctx.ui);
 			clearDisplay(state.ctx.ui as DisplayUIContext);
 		}
 		state.ctx = undefined;
