@@ -13,11 +13,19 @@
 import type { Palette } from "../types.js";
 import { fg, RESET } from "./theme.js";
 
-/** Strip ANSI SGR sequences — the visible width of a string. */
+/**
+ * Strip ANSI SGR sequences and count UTF-16 units — an APPROXIMATION of
+ * terminal width. Emoji (e.g. the ⏰ countdown marker, rendered 2 columns
+ * wide) and CJK are undercounted, so seam callers must inject the host's
+ * width function (pi seam passes pi-tui's grapheme-aware visibleWidth).
+ */
 export function visibleWidth(s: string): number {
 	// biome-ignore lint/suspicious/noControlCharactersInRegex: ESC is the ANSI marker we strip.
 	return s.replace(/\x1b\[[0-9;]*m/g, "").length;
 }
+
+/** Terminal-width function injected by the host seam. */
+export type WidthOf = (s: string) => number;
 
 export interface ModelInfo {
 	id: string;
@@ -76,6 +84,10 @@ export interface ChromeLayoutInput {
 	model: ModelInfo | null;
 	chip: ChipSource;
 	palette: Palette;
+	/** Width function; defaults to the ASCII approximation above. The caller
+	 * must pass one that agrees with how the row will actually be rendered
+	 * (emoji/CJK wide), or the right-aligned label overflows the row. */
+	widthOf?: WidthOf;
 }
 
 export interface ChromeLayout {
@@ -98,17 +110,18 @@ const CHIP_OVERHEAD = 8;
  * border when null).
  */
 export function layoutChrome(input: ChromeLayoutInput): ChromeLayout {
+	const widthOf = input.widthOf ?? visibleWidth;
 	const dropped: string[] = [];
-	const w1 = visibleWidth(input.line1);
+	const w1 = widthOf(input.line1);
 	const full = input.model === null ? null : modelLabel(input.model);
 	const short = input.model?.id ?? null;
 
 	let modelRight: string | null = null;
 	let chipModel: string | null = null;
 	if (input.model !== null) {
-		if (w1 + 2 + visibleWidth(full as string) <= input.width) {
+		if (w1 + 2 + widthOf(full as string) <= input.width) {
 			modelRight = full;
-		} else if (w1 + 2 + visibleWidth(short as string) <= input.width) {
+		} else if (w1 + 2 + widthOf(short as string) <= input.width) {
 			modelRight = short;
 			dropped.push("thinking level");
 		} else {
@@ -173,7 +186,7 @@ export function layoutChrome(input: ChromeLayoutInput): ChromeLayout {
 	for (const candidate of candidates) {
 		if (
 			candidate.text !== null &&
-			visibleWidth(candidate.text) + CHIP_OVERHEAD <= input.width
+			widthOf(candidate.text) + CHIP_OVERHEAD <= input.width
 		) {
 			chip = candidate.text;
 			break;
@@ -195,19 +208,34 @@ export function appendRight(
 	line: string,
 	right: string | null,
 	width: number,
+	widthOf: WidthOf = visibleWidth,
 ): string {
 	if (right === null) return line;
-	const w1 = visibleWidth(line);
-	const wR = visibleWidth(right);
+	const w1 = widthOf(line);
+	const wR = widthOf(right);
 	const gap = width - w1 - wR;
 	if (gap >= 2) return `${line}${" ".repeat(gap)}${right}`;
 	const avail = width - w1 - 2;
 	if (avail < 1) return line;
+	const cut =
+		wR <= avail
+			? right
+			: `${truncateToVisibleUnits(right, avail - 1, widthOf)}…`;
+	return `${line}${" ".repeat(Math.max(2, width - w1 - widthOf(cut)))}${cut}`;
+}
+
+/** Cut the visible units of `right` down to at most `max` (measured with widthOf). */
+function truncateToVisibleUnits(
+	right: string,
+	max: number,
+	widthOf: WidthOf,
+): string {
 	// biome-ignore lint/suspicious/noControlCharactersInRegex: ESC is the ANSI marker we strip.
 	const plain = right.replace(/\x1b\[[0-9;]*m/g, "");
-	const cut =
-		plain.length <= avail
-			? plain
-			: `${plain.slice(0, Math.max(0, avail - 1))}…`;
-	return `${line}${" ".repeat(Math.max(2, width - w1 - visibleWidth(cut)))}${cut}`;
+	let cut = "";
+	for (const ch of plain) {
+		if (widthOf(cut + ch) > max) break;
+		cut += ch;
+	}
+	return cut;
 }

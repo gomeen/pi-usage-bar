@@ -18,7 +18,7 @@
  * built-in editor completely untouched.
  */
 import { CustomEditor } from "@earendil-works/pi-coding-agent";
-import { visibleWidth } from "../render/chrome.js";
+import { visibleWidth } from "@earendil-works/pi-tui"; // grapheme-aware: must agree with how pi paints the border
 
 /** Space around the chip (2+2 gaps) plus the right dash run (4) — keep in sync with render/chrome.ts. */
 const CHIP_OVERHEAD = 8;

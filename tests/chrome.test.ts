@@ -194,4 +194,49 @@ describe("visibleWidth", () => {
 	it("strips SGR sequences", () => {
 		expect(visibleWidth(`${MUTE}main${RESET}`)).toBe(4);
 	});
+	it("regression: injected widthOf counts emoji (⏰) as 2 columns", () => {
+		// The usage row carries two ⏰ countdown markers; an ASCII count
+		// underestimates the row by 2 columns and clipped the model label to
+		// "hi". With a grapheme-aware widthOf the full label must survive.
+		const widthOf = (s: string): number =>
+			[...s.replace(/\x1b\[[0-9;]*m/g, "")].reduce(
+				(n, ch) => n + (ch === "⏰" ? 2 : 1),
+				0,
+			);
+		const line1 = `ZAI 5h ━━ 10% ⏰1h04m │ 7d ━━ 84% ⏰3d02h`; // ASCII count 39, true 41
+		const r = layoutChrome({
+			line1,
+			width: 73,
+			model: { id: "glm-5.3-flash", reasoning: true, thinkingLevel: "high" },
+			chip: { branch: "main", percent: 10 },
+			palette: GRAPHITE,
+			widthOf,
+		});
+		// At the boundary the two counts disagree: width 62 — the ASCII count
+		// (39+2+20=61 ≤ 62) would keep the full label, the true count
+		// (41+2+20=63 > 62) must shed the thinking level instead.
+		const tight = layoutChrome({
+			line1,
+			width: 62,
+			model: { id: "glm-5.3-flash", reasoning: true, thinkingLevel: "high" },
+			chip: { branch: "main", percent: 10 },
+			palette: GRAPHITE,
+			widthOf,
+		});
+		expect(tight.modelRight).toBe("glm-5.3-flash");
+		expect(tight.dropped).toContain("thinking level");
+		expect(r.modelRight).toBe("glm-5.3-flash • high");
+	});
+	it("appendRight with injected widthOf keeps the label inside the row", () => {
+		const widthOf = (s: string): number =>
+			[...s.replace(/\x1b\[[0-9;]*m/g, "")].reduce(
+				(n, ch) => n + (ch === "⏰" ? 2 : 1),
+				0,
+			);
+		const line1 = `ZAI 5h ━━ 10% ⏰1h04m │ 7d ━━ 84% ⏰3d02h`; // true width 46
+		const out = appendRight(line1, "glm-5.3-flash • high", 73, widthOf);
+		// line 46 + pad + label 20 = 73, right-aligned flush
+		expect(widthOf(out)).toBe(73);
+		expect(out.endsWith("glm-5.3-flash • high")).toBe(true);
+	});
 });

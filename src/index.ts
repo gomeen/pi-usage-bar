@@ -6,6 +6,9 @@ import type {
 	ExtensionAPI,
 	ExtensionContext,
 } from "@earendil-works/pi-coding-agent";
+// Grapheme-aware width: the ⏰ marker renders 2 columns wide, and an ASCII
+// count underestimates row width, clipping the right-aligned model label.
+import { visibleWidth as tuiVisibleWidth } from "@earendil-works/pi-tui";
 import { FileCache } from "./cache.js";
 import { loadConfig, resolveEndpointOverrides } from "./config.js";
 import { detectRoute, firstPartyExpansion, PLAN_HOSTS } from "./detect.js";
@@ -289,6 +292,7 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 				const layout = layoutChrome({
 					line1: usage[0] ?? "",
 					width,
+					widthOf: tuiVisibleWidth,
 					model: current.model
 						? {
 								id: current.model.id,
@@ -306,7 +310,12 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 				const lines = [...usage];
 				const first = lines[0];
 				if (first !== undefined && layout.modelRight !== null) {
-					lines[0] = appendRight(first, layout.modelRight, width);
+					lines[0] = appendRight(
+						first,
+						layout.modelRight,
+						width,
+						tuiVisibleWidth,
+					);
 				}
 				return lines;
 			};
