@@ -54,6 +54,13 @@ function currentWidth(): number {
 		: 120;
 }
 
+/** Keep every footer row within pi's terminal-width contract. */
+function fitFooterLines(lines: string[], width: number): string[] {
+	return lines
+		.filter((line) => line.trim().length > 0)
+		.map((line) => truncateToWidth(line, width));
+}
+
 /**
  * The takeover footer: fresh rows every frame (the model label and the
  * editor chip read live session state, so caching by width would freeze
@@ -65,7 +72,7 @@ class TakeoverFooter implements Component {
 		private data: ReadonlyFooterDataProvider,
 	) {}
 	render(width: number): string[] {
-		const lines = this.build(width).filter((l) => l.trim().length > 0);
+		const lines = fitFooterLines(this.build(width), width);
 		const statuses = Array.from(this.data.getExtensionStatuses().entries())
 			.sort(([a], [b]) => a.localeCompare(b))
 			.map(([, text]) => sanitizeStatusText(text));
@@ -83,7 +90,7 @@ class BuilderComponent implements Component {
 	render(width: number): string[] {
 		let lines = this.cache.get(width);
 		if (!lines) {
-			lines = this.build(width).filter((l) => l.trim().length > 0);
+			lines = fitFooterLines(this.build(width), width);
 			this.cache.set(width, lines);
 		}
 		return lines;
@@ -119,7 +126,8 @@ export function publishDisplay(
 		return;
 	}
 
-	const initial = build(currentWidth()).filter((l) => l.trim().length > 0);
+	const width = currentWidth();
+	const initial = fitFooterLines(build(width), width);
 	if (initial.length <= 1) {
 		if (widgetInstalled) {
 			ctx.setWidget(STATUS_KEY, undefined);
