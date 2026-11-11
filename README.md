@@ -10,6 +10,7 @@ Subscription plan usage bars for the [Pi](https://github.com/earendil-works/pi) 
 - **Editor chip**: the git branch and context usage (`main · 60.8%`) sit in the input editor's top border, right-aligned; the current model label rides the first usage row's right edge — replacing pi's stock footer rows (path, token stats) for a two-line footer
 - **Four looks**: aurora block (default), aurora thin, ring (`◔ 14% 5h · resets 1h07m`), and classic battery — all switchable live
 - **Relay balances**: custom providers on one-api/new-api relays — or Sub2API-style sites exposing `/v1/usage` — automatically show their remaining balance (`$200.00`)
+- **WorkBuddy credits**: gateways exposing `/v1/balance-summary` show the credit balance (`2098.71 credits`) using the existing API key, without a currency symbol or an inferred quota percentage.
 - **DeepSeek balance**: the `deepseek` provider shows the account's remaining prepaid balance (`¥110.00`), in the currency the API reports
 - **Kimi / Moonshot balance**: the `moonshotai` / `moonshotai-cn` providers — or any custom id on `api.moonshot.ai` / `api.moonshot.cn` (auto-detected, no mapping needed) — show the Open Platform account's available balance, in the station's own currency
 - **Next official reset** for Codex plans via [codex-resets.com](https://codex-resets.com) — shown only while a reset is announced ahead of time (`↻ Reset announced · in 1h10m`)
@@ -25,9 +26,10 @@ Subscription plan usage bars for the [Pi](https://github.com/earendil-works/pi) 
 | MiniMax Token Plan (Global/China) | `minimax`, `minimax-cn` | API key |
 | DeepSeek (prepaid balance) | `deepseek` | API key |
 | Kimi / Moonshot Open Platform (prepaid balance) | `moonshotai` (global), `moonshotai-cn` (China), custom ids on `api.moonshot.ai` / `api.moonshot.cn` | API key |
+| WorkBuddy credit balance (`/v1/balance-summary`) | any custom provider id | Gateway API key |
 | Relays (one-api/new-api, Sub2API-style `/v1/usage`) | any custom provider id | API key |
 
-Custom provider ids (proxies, cc-switch entries) are auto-probed for relay billing endpoints — the one-api/new-api dashboard family first, then a Sub2API-style `{site}/v1/usage` fallback; map them to a plan explicitly with `providerMap`. Custom ids whose baseUrl sits on a first-party Kimi host (`api.moonshot.ai` / `api.moonshot.cn`) are detected and enumerated automatically.
+Custom provider ids (proxies, cc-switch entries) are auto-probed for relay billing endpoints — the one-api/new-api dashboard family first, then WorkBuddy's `{site}/v1/balance-summary`, then a Sub2API-style `{site}/v1/usage` fallback; map them to a plan explicitly with `providerMap`. Custom ids whose baseUrl sits on a first-party Kimi host (`api.moonshot.ai` / `api.moonshot.cn`) are detected and enumerated automatically.
 
 ## Install
 

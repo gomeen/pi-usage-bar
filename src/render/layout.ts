@@ -262,6 +262,9 @@ function balancePart(
 	if (bal === undefined || !config.show_balance) {
 		return null;
 	}
+	if (bal.unit === "credit") {
+		return `${fg(palette.ok)}${bal.amount.toFixed(2)} credits${RESET}`;
+	}
 	const amount = `${balanceSymbol(bal, config)}${bal.amount.toFixed(2)}`;
 	if (bal.kind === "credits") {
 		return `${fg(palette.ok)}${amount} credits${RESET}`;

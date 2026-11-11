@@ -56,9 +56,14 @@ function describeSnapshot(s: UsageSnapshot): string[] {
 		lines.push(`${w.label}: ${pct}   resets ${reset}`);
 	}
 	if (s.balance) {
-		const currency = s.balance.currency ? ` ${s.balance.currency}` : "";
+		const unit =
+			s.balance.unit === "credit"
+				? " credits"
+				: s.balance.currency
+					? ` ${s.balance.currency}`
+					: "";
 		lines.push(
-			`Balance: ${s.balance.amount.toFixed(2)}${currency} (${s.balance.kind})`,
+			`Balance: ${s.balance.amount.toFixed(2)}${unit} (${s.balance.kind})`,
 		);
 	}
 	if (s.announcement) {

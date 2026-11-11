@@ -69,7 +69,7 @@ function router(
 				return handler(url);
 			}
 		}
-		throw new Error(`unexpected url ${url}`);
+		return res(404, "not found");
 	};
 }
 
@@ -84,6 +84,151 @@ function opts(
 const SUB = "/v1/dashboard/billing/subscription";
 const USAGE = "/v1/dashboard/billing/usage";
 const SITE_USAGE = "/v1/usage";
+const BALANCE_SUMMARY = "/v1/balance-summary";
+
+describe("WorkBuddy credit balance", () => {
+	it("uses the API-key balance endpoint before the panel-only usage endpoint", async () => {
+		const log: Call[] = [];
+		const fetchImpl = router(
+			{
+				[BALANCE_SUMMARY]: () =>
+					res(200, '{"balance":2098.71,"unit":"credit","realm":"cn"}'),
+				[SITE_USAGE]: () =>
+					res(401, '{"error":{"message":"panel password required"}}'),
+				"*": () => res(404, "not found"),
+			},
+			log,
+		);
+		const cache = newCache();
+		const result = await probeBalance(
+			"http://127.0.0.1:8788/v1",
+			"workbuddy",
+			cred,
+			opts(cache, fetchImpl),
+		);
+		expect(result).toMatchObject({
+			provider: "workbuddy",
+			status: "ok",
+			balance: { kind: "relay", amount: 2098.71, unit: "credit" },
+		});
+		expect(log.map((c) => c.url)).toEqual([
+			"http://127.0.0.1:8788/v1/dashboard/billing/subscription",
+			"http://127.0.0.1:8788/v1/balance-summary",
+		]);
+		expect(log.every((c) => c.auth === "Bearer sk-relay-test")).toBe(true);
+		const cached = await probeBalance(
+			"http://127.0.0.1:8788/v1",
+			"workbuddy",
+			cred,
+			opts(
+				cache,
+				async () => {
+					throw new Error("cache must prevent requests");
+				},
+				NOW + MIN,
+			),
+		);
+		expect(cached).toEqual(result);
+	});
+
+	it("preserves credit units on network failure and negative-cache fallback", async () => {
+		const cache = newCache();
+		const good = router({
+			[BALANCE_SUMMARY]: () => res(200, '{"balance":2098.71,"unit":"credit"}'),
+			"*": () => res(404, ""),
+		});
+		const first = await probeRelayBalance(
+			"https://workbuddy.example/v1",
+			cred,
+			opts(cache, good),
+		);
+		const failed = await probeRelayBalance(
+			"https://workbuddy.example/v1",
+			cred,
+			opts(
+				cache,
+				async () => {
+					throw new Error("offline");
+				},
+				NOW + 6 * MIN,
+			),
+		);
+		expect(failed).toEqual(first);
+		const absent = await probeRelayBalance(
+			"https://workbuddy.example/v1",
+			cred,
+			opts(cache, router({ "*": () => res(404, "") }), NOW + 7 * MIN),
+		);
+		expect(absent).toEqual(first);
+		const cachedAbsent = await probeRelayBalance(
+			"https://workbuddy.example/v1",
+			cred,
+			opts(
+				cache,
+				async () => {
+					throw new Error("negative cache must prevent requests");
+				},
+				NOW + 8 * MIN,
+			),
+		);
+		expect(cachedAbsent).toEqual(first);
+	});
+
+	it("accepts zero credit balance and forwards provider routing headers", async () => {
+		const cache = newCache();
+		const fetchImpl: FetchLike = async (url, init) => {
+			expect(init?.headers?.["X-Realm"]).toBe("cn");
+			return url.endsWith(BALANCE_SUMMARY)
+				? res(200, '{"balance":0,"unit":"credit"}')
+				: res(404, "");
+		};
+		const result = await probeRelayBalance(
+			"https://workbuddy.example",
+			{ ...cred, headers: { "X-Realm": "cn" } },
+			opts(cache, fetchImpl),
+		);
+		expect(result.balance).toEqual({
+			kind: "relay",
+			amount: 0,
+			unit: "credit",
+		});
+	});
+
+	it("still reads monetary balances when the optional summary is protected", async () => {
+		const fetchImpl = router({
+			[BALANCE_SUMMARY]: () => res(403, "forbidden"),
+			[SITE_USAGE]: () => res(200, '{"balance":88}'),
+			"*": () => res(404, "not found"),
+		});
+		const result = await probeRelayBalance(
+			"https://relay.example",
+			cred,
+			opts(newCache(), fetchImpl),
+		);
+		expect(result.balance).toEqual({ kind: "relay", amount: 88 });
+	});
+
+	it("ignores invalid summaries and continues to monetary relay endpoints", async () => {
+		for (const body of [
+			'{"balance":null,"unit":"credit"}',
+			'{"balance":10,"unit":"unknown"}',
+			"not json",
+		]) {
+			const cache = newCache();
+			const fetchImpl = router({
+				[BALANCE_SUMMARY]: () => res(200, body),
+				[SITE_USAGE]: () => res(200, '{"balance":88}'),
+				"*": () => res(404, ""),
+			});
+			const result = await probeRelayBalance(
+				"https://relay.example",
+				cred,
+				opts(cache, fetchImpl),
+			);
+			expect(result.balance).toEqual({ kind: "relay", amount: 88 });
+		}
+	});
+});
 
 describe("probeRelayBalance", () => {
 	it("computes remaining from subscription and usage endpoints", async () => {
@@ -120,7 +265,7 @@ describe("probeRelayBalance", () => {
 		});
 	});
 
-	it("returns a 'no billing endpoint' error snapshot when both families miss", async () => {
+	it("returns a 'no billing endpoint' error snapshot when all families miss", async () => {
 		const cache = newCache();
 		const log: Call[] = [];
 		const fetchImpl = router({ "*": () => res(404, "not found") }, log);
@@ -136,6 +281,7 @@ describe("probeRelayBalance", () => {
 		expect(snap.balance).toBeUndefined();
 		expect(log.map((c) => c.url)).toEqual([
 			"https://relay.example.com/v1/dashboard/billing/subscription",
+			"https://relay.example.com/v1/balance-summary",
 			"https://relay.example.com/v1/usage",
 		]);
 	});
@@ -344,6 +490,7 @@ describe("probeRelayBalance", () => {
 		expect(snap.provider).toBe(PROVIDER);
 		expect(log.map((c) => c.url)).toEqual([
 			"https://ai.yuchuantest.com/v1/dashboard/billing/subscription",
+			"https://ai.yuchuantest.com/v1/balance-summary",
 			"https://ai.yuchuantest.com/v1/usage",
 		]);
 		expect(log.every((c) => c.auth === "Bearer sk-relay-test")).toBe(true);
@@ -373,6 +520,7 @@ describe("probeRelayBalance", () => {
 		expect(snap.balance?.amount).toBe(88);
 		expect(log.map((c) => c.url)).toEqual([
 			"https://relay.example.com/v1/dashboard/billing/subscription",
+			"https://relay.example.com/v1/balance-summary",
 			"https://relay.example.com/v1/usage",
 		]);
 	});

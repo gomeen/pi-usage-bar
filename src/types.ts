@@ -35,7 +35,7 @@ export interface QuotaWindow {
 	durationSeconds: number | null;
 }
 
-/** A monetary amount attached to a snapshot. Raw number; render applies currency. */
+/** A balance attached to a snapshot, denominated in currency or credits. */
 export interface Balance {
 	/**
 	 * `relay`: one-api/new-api station or Sub2API site balance;
@@ -50,6 +50,8 @@ export interface Balance {
 	 * absent (relay probes) render falls back to `config.currency`.
 	 */
 	currency?: string;
+	/** Non-monetary balance unit, as reported by gateways such as WorkBuddy. */
+	unit?: "credit";
 }
 
 /** Official Codex reset announcement (codex-resets.com), already pre-formatted. */

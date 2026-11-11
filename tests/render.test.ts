@@ -400,6 +400,19 @@ describe("error and relay segments", () => {
 // ---------------------------------------------------------------------------
 
 describe("balance and announcement", () => {
+	it("renders WorkBuddy credits without a currency symbol", () => {
+		const s = snap();
+		s.provider = "workbuddy";
+		s.plan = "relay";
+		s.balance = { kind: "relay", amount: 2098.71, unit: "credit" };
+		const c = cfg();
+		c.currency = "¥";
+		expect(strip(renderStatus([s], c, 129, GRAPHITE, NOW)[0] ?? "")).toBe(
+			"2098.71 credits",
+		);
+		c.show_balance = false;
+		expect(renderStatus([s], c, 129, GRAPHITE, NOW)).toEqual([]);
+	});
 	it("renders a relay balance as '$200.00' with no name when alone", () => {
 		const s = snap();
 		s.provider = "4sapi";

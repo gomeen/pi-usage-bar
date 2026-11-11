@@ -10,6 +10,7 @@
 - **输入框角标**：git 分支与上下文用量（`main · 60.8%`）嵌入输入框顶边框右侧，当前模型名右对齐在用量条第一行——替代 pi 自带 footer 的路径/统计行，整个 footer 只剩两行
 - **四种 look**：aurora 块条（默认）、aurora 细线、ring（`◔ 14% 5h · resets 1h07m`）、classic 电池条——全部可实时切换
 - **中转站余额**：one-api/new-api 系中转（或提供 `/v1/usage` 的 Sub2API 系站点）的自定义 provider 自动探测计费端点，显示剩余金额（`$200.00`）
+- **WorkBuddy 积分**：支持 `/v1/balance-summary` 的网关直接用现有 API Key 查询，显示 `2098.71 credits`，不加货币符号，也不推算额度百分比。
 - **DeepSeek 余额**：`deepseek` provider 显示账户剩余预付余额（`¥110.00`），货币符号按 API 返回值显示
 - **Kimi / Moonshot 余额**：`moonshotai` / `moonshotai-cn` provider——或 baseUrl 在 `api.moonshot.ai` / `api.moonshot.cn` 上的任意自定义 id（自动检测，无需手动映射）——显示开放平台账户可用余额，货币按所在站点币种显示
 - **下次官方重置预告**：Codex 套餐接入 [codex-resets.com](https://codex-resets.com)，仅在站点发布了将来重置预告时显示（`↻ Reset announced · in 1h10m`），不再回显已经发生过的重置
@@ -25,9 +26,10 @@
 | MiniMax Token Plan（国际/国内） | `minimax`、`minimax-cn` | API key |
 | DeepSeek（预付余额） | `deepseek` | API key |
 | Kimi / Moonshot 开放平台（预付余额） | `moonshotai`（国际）、`moonshotai-cn`（国内）、baseUrl 在 `api.moonshot.ai` / `api.moonshot.cn` 上的自定义 id | API key |
+| WorkBuddy 积分余额（`/v1/balance-summary`） | 任意自定义 provider id | 网关 API key |
 | 中转站（one-api/new-api 系、Sub2API 系 `/v1/usage`） | 任意自定义 provider id | API key |
 
-自定义 provider（代理、cc-switch 条目）会自动探测中转计费端点——先试 one-api/new-api 的 dashboard 端点族，再回退到 Sub2API 风格的 `{site}/v1/usage`；也可以用 `providerMap` 显式映射到某个套餐。baseUrl 位于第一方 Kimi host（`api.moonshot.ai` / `api.moonshot.cn`）的自定义 id 会自动检测并常驻显示。
+自定义 provider（代理、cc-switch 条目）会自动探测中转计费端点——先试 one-api/new-api 的 dashboard 端点族，再试 WorkBuddy 的 `{site}/v1/balance-summary`，最后回退到 Sub2API 风格的 `{site}/v1/usage`；也可以用 `providerMap` 显式映射到某个套餐。baseUrl 位于第一方 Kimi host（`api.moonshot.ai` / `api.moonshot.cn`）的自定义 id 会自动检测并常驻显示。
 
 ## 安装
 

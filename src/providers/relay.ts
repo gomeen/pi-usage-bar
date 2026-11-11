@@ -1,13 +1,14 @@
 /**
  * Relay balance probe — issue 013, plan B.
  *
- * Two endpoint families are probed, in order:
+ * Three endpoint families are probed, in order:
  * 1. one-api / new-api de-facto standard: `/v1/dashboard/billing/subscription`
  *    + `/v1/dashboard/billing/usage`, `remaining = hard_limit_usd - total_usage/100`.
- * 2. Sub2API-style site endpoint: `{site}/v1/usage` → `{ balance, ... }`
+ * 2. WorkBuddy: `/v1/balance-summary` → `{ balance, unit: "credit" }`.
+ * 3. Sub2API-style site endpoint: `{site}/v1/usage` → `{ balance, ... }`
  *    (the site's own key is enough; no access token needed).
  *
- * A miss on one family falls through to the next; only when both families are
+ * A miss on one family falls through to the next; only when all families are
  * absent is the host negative-cached (one probe per week). Transient failures
  * keep the last good amount with its original `fetchedAt` so render adds the
  * `~` (approximate) mark. Never throws.
@@ -30,7 +31,12 @@ const NEGATIVE_RETRY_MS = 7 * 24 * 60 * 60 * 1000;
  * Cache-key version. Bump it whenever the endpoint families change: an old
  * "absent" verdict would otherwise suppress the new families for a week.
  */
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v3";
+
+interface RelayAmount {
+	amount: number;
+	unit?: "credit";
+}
 
 /**
  * Cache key for one relay account: host + a truncated, non-reversible token
@@ -51,14 +57,15 @@ interface AbsentData {
 	absent: true;
 	amount?: number;
 	amountFetchedAt?: number;
+	unit?: "credit";
 }
 
 type Classified =
-	| { kind: "good"; amount: number; fetchedAt: number }
+	| ({ kind: "good"; fetchedAt: number } & RelayAmount)
 	| {
 			kind: "absent";
 			probedAt: number;
-			lastGood?: { amount: number; fetchedAt: number };
+			lastGood?: RelayAmount & { fetchedAt: number };
 	  };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -92,12 +99,13 @@ function okSnapshot(
 	host: string,
 	amount: number,
 	fetchedAt: number,
+	unit?: "credit",
 ): UsageSnapshot {
 	return {
 		provider: host,
 		plan: "relay",
 		windows: [],
-		balance: { kind: "relay", amount },
+		balance: { kind: "relay", amount, ...(unit ? { unit } : {}) },
 		status: "ok",
 		fetchedAt,
 	};
@@ -125,6 +133,7 @@ function classify(
 		return null;
 	}
 	const data = entry.data;
+	const unit = data.unit === "credit" ? { unit: "credit" as const } : {};
 	if (data.absent === true) {
 		const absent: Classified = { kind: "absent", probedAt: entry.fetchedAt };
 		const amount = data.amount;
@@ -135,12 +144,17 @@ function classify(
 			typeof amountFetchedAt === "number" &&
 			Number.isFinite(amountFetchedAt)
 		) {
-			absent.lastGood = { amount, fetchedAt: amountFetchedAt };
+			absent.lastGood = { amount, fetchedAt: amountFetchedAt, ...unit };
 		}
 		return absent;
 	}
 	if (typeof data.amount === "number" && Number.isFinite(data.amount)) {
-		return { kind: "good", amount: data.amount, fetchedAt: entry.fetchedAt };
+		return {
+			kind: "good",
+			amount: data.amount,
+			fetchedAt: entry.fetchedAt,
+			...unit,
+		};
 	}
 	return null;
 }
@@ -177,13 +191,14 @@ export async function probeRelayBalance(
 				provider,
 				cached.lastGood.amount,
 				cached.lastGood.fetchedAt,
+				cached.lastGood.unit,
 			);
 		}
 		return errorSnapshot(provider, "no billing endpoint", now);
 	}
 	// Fresh good value: reuse for 5 minutes (issue 013).
 	if (cached?.kind === "good" && now - cached.fetchedAt < GOOD_TTL_MS) {
-		return okSnapshot(provider, cached.amount, cached.fetchedAt);
+		return okSnapshot(provider, cached.amount, cached.fetchedAt, cached.unit);
 	}
 
 	const release = opts.cache.tryInflightLock(key) ?? (() => {});
@@ -196,7 +211,7 @@ export async function probeRelayBalance(
 
 /** Outcome of one endpoint family. */
 type FamilyResult =
-	| { kind: "ok"; amount: number }
+	| ({ kind: "ok" } & RelayAmount)
 	/** The family does not exist on this host (404/405 or an unusable shape). */
 	| { kind: "absent" }
 	/** Transient failure: keep the last good amount and report this error. */
@@ -281,7 +296,39 @@ async function probeDashboardFamily(
 }
 
 /**
- * Family 2 — Sub2API-style site usage endpoint: `{site}/v1/usage` answers
+ * Family 2 — WorkBuddy's API-key endpoint. Its /v1/usage route is panel-only;
+ * keep the explicit non-monetary unit rather than assuming a currency.
+ */
+async function probeBalanceSummaryFamily(
+	site: string,
+	init: { headers: Record<string, string>; signal?: AbortSignal },
+	fetchImpl: FetchLike,
+): Promise<FamilyResult> {
+	const res = await get(`${site}/v1/balance-summary`, init, fetchImpl);
+	if (res === null) return { kind: "error", error: "unavailable" };
+	if (res.status === 404 || res.status === 405) return { kind: "absent" };
+	if (!res.ok) {
+		return {
+			kind: "error",
+			error: res.status === 429 ? "unavailable (429)" : "unavailable",
+		};
+	}
+	let payload: unknown;
+	try {
+		payload = JSON.parse(res.body);
+	} catch {
+		return { kind: "absent" };
+	}
+	if (!isRecord(payload) || payload.unit !== "credit")
+		return { kind: "absent" };
+	const amount = toFiniteNumber(payload.balance);
+	return amount === null
+		? { kind: "absent" }
+		: { kind: "ok", amount, unit: "credit" };
+}
+
+/**
+ * Family 3 — Sub2API-style site usage endpoint: `{site}/v1/usage` answers
  * with the account balance. The base URL may or may not carry a `/v1`
  * suffix, so it is normalised before the path is appended.
  */
@@ -339,7 +386,7 @@ async function probe(
 ): Promise<UsageSnapshot> {
 	const now = opts.now;
 	const base = baseUrl.replace(/\/+$/, "");
-	// The site root carries no `/v1` suffix: both families append their own
+	// The site root carries no `/v1` suffix: all families append their own
 	// path, so a provider base URL of `https://host/v1` must not become
 	// `https://host/v1/v1/...`.
 	const site = base.replace(/\/v1$/, "");
@@ -358,23 +405,28 @@ async function probe(
 
 	const lastGood =
 		cached?.kind === "good"
-			? { amount: cached.amount, fetchedAt: cached.fetchedAt }
+			? {
+					amount: cached.amount,
+					fetchedAt: cached.fetchedAt,
+					...(cached.unit ? { unit: cached.unit } : {}),
+				}
 			: cached?.kind === "absent"
 				? cached.lastGood
 				: undefined;
 	const keepLast = (error: string): UsageSnapshot =>
 		lastGood
-			? okSnapshot(provider, lastGood.amount, lastGood.fetchedAt)
+			? okSnapshot(provider, lastGood.amount, lastGood.fetchedAt, lastGood.unit)
 			: errorSnapshot(provider, error, now);
 	const negative = (): UsageSnapshot => {
 		const absent: AbsentData = { absent: true };
 		if (lastGood) {
 			absent.amount = lastGood.amount;
 			absent.amountFetchedAt = lastGood.fetchedAt;
+			if (lastGood.unit) absent.unit = lastGood.unit;
 		}
 		opts.cache.set(key, absent, now);
 		return lastGood
-			? okSnapshot(provider, lastGood.amount, lastGood.fetchedAt)
+			? okSnapshot(provider, lastGood.amount, lastGood.fetchedAt, lastGood.unit)
 			: errorSnapshot(provider, "no billing endpoint", now);
 	};
 
@@ -388,16 +440,28 @@ async function probe(
 		return keepLast(dashboard.error);
 	}
 
-	// Family 2 — Sub2API-style site usage endpoint.
+	// Family 2 — WorkBuddy credits (before its panel-only /v1/usage route).
+	const summary = await probeBalanceSummaryFamily(site, init, opts.fetchImpl);
+	if (summary.kind === "ok") {
+		const value: RelayAmount = {
+			amount: summary.amount,
+			...(summary.unit ? { unit: summary.unit } : {}),
+		};
+		opts.cache.set(key, value, now);
+		return okSnapshot(provider, value.amount, now, value.unit);
+	}
+	// Family 3 — Sub2API-style site usage endpoint. A protected or failing
+	// optional summary must not hide a working monetary balance endpoint.
 	const siteUsage = await probeSiteUsageFamily(site, init, opts.fetchImpl);
 	if (siteUsage.kind === "ok") {
 		opts.cache.set(key, { amount: siteUsage.amount }, now);
 		return okSnapshot(provider, siteUsage.amount, now);
 	}
 	if (siteUsage.kind === "error") {
-		return keepLast(siteUsage.error);
+		return keepLast(summary.kind === "error" ? summary.error : siteUsage.error);
 	}
+	if (summary.kind === "error") return keepLast(summary.error);
 
-	// Neither family exists on this host: remember the verdict for a week.
+	// No family exists on this host: remember the verdict for a week.
 	return negative();
 }

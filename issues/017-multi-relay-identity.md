@@ -33,9 +33,10 @@ blocked-by: []
 
 **探测端点族**（`src/providers/relay.ts`，见 issue 013 修订）：
 1. one-api / new-api：`{site}/v1/dashboard/billing/subscription` + `/v1/dashboard/billing/usage` → `hard_limit_usd − total_usage/100`
-2. Sub2API 风格：`{site}/v1/usage` → `balance`（兼容 `remaining`、`quota.limit−used`）
+2. WorkBuddy：`{site}/v1/balance-summary` → `balance` + `unit: "credit"`，用 API Key 可读，必须在该网关需要面板权限的 `/v1/usage` 前探测。积分显示为 `2098.71 credits`，不套用货币符号；成功缓存及 last-good / 负缓存回退都保留单位。
+3. Sub2API 风格：`{site}/v1/usage` → `balance`（兼容 `remaining`、`quota.limit−used`）
 
-一族缺失才回退到下一族，两族皆缺才负缓存。base URL 归一化：剥掉尾部 `/v1` 再拼路径（修掉 `https://host/v1` 变成 `/v1/v1/...`）。
+一族缺失才回退到下一族，所有端点族皆缺才负缓存。可选的 WorkBuddy 摘要若返回权限或临时错误，仍会尝试原有 Sub2API 端点，避免新探测阻断原先可用的中转站；没有其他可用端点时仍按错误处理，不记为“端点不存在”。新增 WorkBuddy 端点后缓存版本升为 v3，旧的“无计费端点”判定不再压制新探测。base URL 归一化：剥掉尾部 `/v1` 再拼路径（修掉 `https://host/v1` 变成 `/v1/v1/...`）。
 
 ## 实测
 
