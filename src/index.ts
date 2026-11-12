@@ -66,6 +66,8 @@ export function firstPartyCandidateIds(registry: RegistryLike): string[] {
 	return firstPartyExpansion([...providerIds], baseUrlOf);
 }
 
+const VIRTUAL_GATEWAY_PROVIDERS = new Set(["magpie"]);
+
 interface State {
 	ctx: ExtensionContext | undefined;
 	config: UsageBarConfig;
@@ -104,7 +106,7 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 	function activeTargets(ctx: ExtensionContext): FetchTarget[] {
 		const model = ctx.model;
 		const provider = model?.provider ?? "";
-		if (!provider) return [];
+		if (!provider || VIRTUAL_GATEWAY_PROVIDERS.has(provider)) return [];
 		const route = detectRoute(
 			provider,
 			model?.baseUrl,
@@ -141,7 +143,8 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 		const registry = registryOf(ctx);
 		const candidates = new Set<string>();
 		const active = ctx.model?.provider ?? "";
-		if (active) candidates.add(active);
+		if (active && !VIRTUAL_GATEWAY_PROVIDERS.has(active))
+			candidates.add(active);
 		for (const id of Object.keys(PLAN_HOSTS)) candidates.add(id);
 		for (const id of Object.keys(state.config.providerMap)) candidates.add(id);
 		// Custom providers on first-party prepaid hosts (issue 019 amendment):
@@ -155,6 +158,7 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 		const filter = state.config.display.providers;
 		return Promise.all(
 			[...candidates].map(async (id): Promise<FetchTarget | null> => {
+				if (VIRTUAL_GATEWAY_PROVIDERS.has(id)) return null;
 				const model = ctx.model;
 				const baseUrl =
 					id === model?.provider
@@ -267,6 +271,9 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 			if (current?.mode !== "tui") return;
 			const pal = palette(current);
 			const build = (width: number): string[] => {
+				const virtualGatewayActive = VIRTUAL_GATEWAY_PROVIDERS.has(
+					current.model?.provider ?? "",
+				);
 				const usage =
 					state.snapshots.length === 0
 						? []
@@ -290,7 +297,7 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 				// editor top border. The chip survives even with no usage data
 				// (ctx% comes from the pi session, not from our fetches).
 				const layout = layoutChrome({
-					line1: usage[0] ?? "",
+					line1: virtualGatewayActive ? "" : (usage[0] ?? ""),
 					width,
 					widthOf: tuiVisibleWidth,
 					model: current.model
@@ -307,6 +314,16 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 					palette: pal,
 				});
 				state.chrome = { width, chip: layout.chip };
+				if (virtualGatewayActive) {
+					// A routing gateway has no billable vendor row of its own. Keep
+					// its model on row one, then retain every real provider on row two.
+					return layout.modelRight === null
+						? usage
+						: [
+								appendRight("", layout.modelRight, width, tuiVisibleWidth),
+								...usage,
+							];
+				}
 				const lines = [...usage];
 				const first = lines[0];
 				if (first !== undefined && layout.modelRight !== null) {
@@ -315,6 +332,12 @@ export default function usageBarExtension(pi: ExtensionAPI): void {
 						layout.modelRight,
 						width,
 						tuiVisibleWidth,
+					);
+				} else if (first === undefined && layout.modelRight !== null) {
+					// Keep the first footer row: empty vendor side, selected model on
+					// the right.
+					lines.push(
+						appendRight("", layout.modelRight, width, tuiVisibleWidth),
 					);
 				}
 				return lines;

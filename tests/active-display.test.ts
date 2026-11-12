@@ -66,6 +66,37 @@ describe("user scenario: glm model via custom provider (cc-switch → zai-cn)", 
 		expect(strip(lines[0] ?? "")).toContain("ZAI");
 	});
 
+	it("keeps non-active vendor usage when a Magpie model is active", () => {
+		const lines = renderStatus(snapshots, cfg, 120, GRAPHITE, NOW, {
+			provider: "magpie",
+			plan: null,
+		});
+		// biome-ignore lint/suspicious/noControlCharactersInRegex: stripping ANSI in tests.
+		const strip = (s: string) => s.replace(/\x1b\[[0-9;]*m/g, "");
+		const rendered = strip(lines.join(" "));
+		expect(rendered).toContain("ZAI 5h·62%");
+		expect(rendered).toContain("MiniMax 5h·2%");
+		expect(rendered).toContain("Codex 5h·38%");
+		expect(rendered).toContain(" │ ");
+		expect(rendered).not.toContain("■■");
+	});
+
+	it("keeps relay balances when a Magpie model is active", () => {
+		const relaySnapshots = [
+			snap("4sapi", "relay", [12, 24]),
+			snap("h-self", "relay", [34, 45]),
+		];
+		const lines = renderStatus(relaySnapshots, cfg, 120, GRAPHITE, NOW, {
+			provider: "magpie",
+			plan: "relay",
+		});
+		// biome-ignore lint/suspicious/noControlCharactersInRegex: stripping ANSI in tests.
+		const strip = (s: string) => s.replace(/\x1b\[[0-9;]*m/g, "");
+		const rendered = strip(lines.join(" "));
+		expect(rendered).toContain("4sapi");
+		expect(rendered).toContain("h-self");
+	});
+
 	it("CN suffix dropped when the global twin is absent", () => {
 		const lines = renderStatus(snapshots, cfg, 120, GRAPHITE, NOW, {
 			provider: "cc-switch-zhipu-glm",

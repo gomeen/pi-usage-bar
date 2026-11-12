@@ -16,7 +16,6 @@ import { fg, GRAPHITE, RESET } from "../src/render/theme";
 
 const MUTE = fg(GRAPHITE.mute);
 const EDGE = fg(GRAPHITE.edge);
-const WT = fg(GRAPHITE.wt);
 const WARN = fg(GRAPHITE.warn);
 const HOT = fg(GRAPHITE.hot);
 
@@ -101,7 +100,7 @@ describe("layoutChrome", () => {
 		expect(r.dropped).toEqual(["thinking level"]);
 	});
 
-	it("merges the model into the chip when row one cannot take it", () => {
+	it("omits the model when row one cannot take it", () => {
 		const r = layoutChrome({
 			line1: "a".repeat(70),
 			width: 80,
@@ -110,21 +109,24 @@ describe("layoutChrome", () => {
 			palette: GRAPHITE,
 		});
 		expect(r.modelRight).toBeNull();
-		expect(r.chip).toBe(
-			`${MUTE}main${RESET}${EDGE} · ${RESET}${MUTE}60.8%${RESET}${EDGE} · ${RESET}${WT}gpt-6.1-sol${RESET}`,
-		);
-		expect(r.dropped).toContain("model row 1 → merged into chip");
+		expect(r.chip).toBe(chipText(CHIP_SRC, GRAPHITE));
+		expect(r.dropped).toContain("model row 1 → omitted");
 	});
 
-	it("chip sheds the merged model, then branch, then percent", () => {
-		const merged = layoutChrome({
-			line1: "a".repeat(70),
+	it("keeps the model on the right when the vendor side is empty", () => {
+		const r = layoutChrome({
+			line1: "",
 			width: 80,
 			model,
 			chip: CHIP_SRC,
 			palette: GRAPHITE,
 		});
-		// 26 + 8 > 30 → shed model → base chip (12 + 8 ≤ 30)
+		expect(r.modelRight).toBe("gpt-6.1-sol • high");
+		expect(r.chip).toBe(chipText(CHIP_SRC, GRAPHITE));
+	});
+
+	it("keeps the chip separate when the model does not fit row one", () => {
+		// 26 + 8 > 30 → leave the model area empty; the chip stays intact.
 		const at30 = layoutChrome({
 			line1: "a".repeat(70),
 			width: 30,
@@ -133,8 +135,8 @@ describe("layoutChrome", () => {
 			palette: GRAPHITE,
 		});
 		expect(at30.chip).toBe(chipText(CHIP_SRC, GRAPHITE));
-		expect(at30.dropped).toContain("model (chip)");
-		expect(at30.chip).not.toBe(merged.chip);
+		expect(at30.modelRight).toBeNull();
+		expect(at30.dropped).toContain("model row 1 → omitted");
 
 		// 20 > 19 → shed branch → percent only
 		const at19 = layoutChrome({
@@ -199,6 +201,7 @@ describe("visibleWidth", () => {
 		// underestimates the row by 2 columns and clipped the model label to
 		// "hi". With a grapheme-aware widthOf the full label must survive.
 		const widthOf = (s: string): number =>
+			// biome-ignore lint/suspicious/noControlCharactersInRegex: stripping ANSI in tests.
 			[...s.replace(/\x1b\[[0-9;]*m/g, "")].reduce(
 				(n, ch) => n + (ch === "⏰" ? 2 : 1),
 				0,
@@ -229,6 +232,7 @@ describe("visibleWidth", () => {
 	});
 	it("appendRight with injected widthOf keeps the label inside the row", () => {
 		const widthOf = (s: string): number =>
+			// biome-ignore lint/suspicious/noControlCharactersInRegex: stripping ANSI in tests.
 			[...s.replace(/\x1b\[[0-9;]*m/g, "")].reduce(
 				(n, ch) => n + (ch === "⏰" ? 2 : 1),
 				0,

@@ -444,14 +444,17 @@ export function renderStatus(
 		return [];
 	}
 	const currentSnapshot =
-		snapshots.find((s) => s.provider === active?.provider) ??
-		(active?.plan
-			? snapshots.find((s) => s.plan === active.plan)
-			: undefined) ??
-		snapshots[0];
+		active === undefined
+			? snapshots[0]
+			: (snapshots.find((s) => s.provider === active.provider) ??
+				(active.plan !== null && active.plan !== "relay"
+					? snapshots.find((s) => s.plan === active.plan)
+					: undefined));
 	const selected =
 		config.display.mode === "active"
-			? snapshots.filter((s) => s === currentSnapshot)
+			? currentSnapshot === undefined
+				? []
+				: [currentSnapshot]
 			: snapshots.filter(
 					(s) =>
 						s.plan === "relay" ||
@@ -479,12 +482,20 @@ export function renderStatus(
 	) {
 		const activeSnap =
 			visible.find((s) => s.provider === active.provider) ??
-			(active.plan === null
+			(active.plan === null || active.plan === "relay"
 				? undefined
-				: visible.find((s) => s.plan === active.plan)) ??
-			visible[0];
+				: visible.find((s) => s.plan === active.plan));
 		if (!activeSnap) {
-			return [];
+			// Virtual providers such as Magpie routing groups have no quota
+			// snapshot of their own. Render every real provider as a compact
+			// summary instead of promoting the first (possibly stale) snapshot
+			// to the active row.
+			const present = new Set(visible.map((s) => s.plan));
+			const summary = visible
+				.map((s) => compactItem(s, config, palette, now, present))
+				.filter((item): item is string => item !== null)
+				.join(`${fg(palette.edge)} │ ${RESET}`);
+			return summary === "" ? [] : [summary];
 		}
 		const rest = visible.filter((s) => s !== activeSnap);
 		const present = new Set(visible.map((s) => s.plan));

@@ -91,7 +91,7 @@ export interface ChromeLayoutInput {
 }
 
 export interface ChromeLayout {
-	/** Text to right-align onto line1, or null when there is no room. */
+	/** Text to right-align onto line1, or null when the row is empty or tight. */
 	modelRight: string | null;
 	/** Legend chip for the editor top border, or null (plain border). */
 	chip: string | null;
@@ -104,10 +104,10 @@ const CHIP_OVERHEAD = 8;
 
 /**
  * D3 layout: the model rides line1's right edge when it fits (full label
- * first, bare id as fallback); otherwise it merges into the chip, which then
- * sheds branch and percent one by one. Returns what actually fits — the
- * caller applies `modelRight` via `appendRight` and draws `chip` (or a plain
- * border when null).
+ * first, bare id as fallback). When there is no usage row, the caller can
+ * render the model against an empty left side; when a populated row is too
+ * full, the model is omitted. It never merges into the branch/context chip,
+ * so the context percentage remains in its own location.
  */
 export function layoutChrome(input: ChromeLayoutInput): ChromeLayout {
 	const widthOf = input.widthOf ?? visibleWidth;
@@ -117,7 +117,6 @@ export function layoutChrome(input: ChromeLayoutInput): ChromeLayout {
 	const short = input.model?.id ?? null;
 
 	let modelRight: string | null = null;
-	let chipModel: string | null = null;
 	if (input.model !== null) {
 		if (w1 + 2 + widthOf(full as string) <= input.width) {
 			modelRight = full;
@@ -125,17 +124,12 @@ export function layoutChrome(input: ChromeLayoutInput): ChromeLayout {
 			modelRight = short;
 			dropped.push("thinking level");
 		} else {
-			chipModel = short;
-			dropped.push("model row 1 → merged into chip");
+			dropped.push("model row 1 → omitted");
 		}
 	}
 
-	// Chip candidates, widest first; the first that fits wins. When the model
-	// merged into the chip it is styled as identity (wt) and sheds last.
-	// Each drop label names what is lost when THIS candidate is skipped for
-	// the next, narrower one; `dropped` accumulates what was shed on the way.
-	const modelPart =
-		chipModel === null ? null : `${fg(input.palette.wt)}${chipModel}${RESET}`;
+	// The context chip is independent from model placement. It always sheds
+	// branch first, then percent, as the available border width decreases.
 	const pctPart =
 		input.chip.percent === null
 			? null
@@ -146,40 +140,20 @@ export function layoutChrome(input: ChromeLayoutInput): ChromeLayout {
 			: `${fg(input.palette.mute)}${input.chip.branch}${RESET}`;
 	// Each drop label names what is lost when THIS candidate is skipped for
 	// the next, narrower one ("branch · context percent" etc. chains down).
-	const candidates: { text: string | null; drop: string }[] =
-		chipModel === null
-			? [
-					{
-						text: joinChip([branchPart, pctPart], input.palette),
-						drop: "branch",
-					},
-					{
-						text: joinChip([pctPart], input.palette),
-						drop: "context percent",
-					},
-					{
-						text: joinChip([], input.palette),
-						drop: "",
-					},
-				]
-			: [
-					{
-						text: joinChip([branchPart, pctPart, modelPart], input.palette),
-						drop: "model (chip)",
-					},
-					{
-						text: joinChip([branchPart, pctPart], input.palette),
-						drop: "branch",
-					},
-					{
-						text: joinChip([pctPart], input.palette),
-						drop: "context percent",
-					},
-					{
-						text: joinChip([], input.palette),
-						drop: "",
-					},
-				];
+	const candidates: { text: string | null; drop: string }[] = [
+		{
+			text: joinChip([branchPart, pctPart], input.palette),
+			drop: "branch",
+		},
+		{
+			text: joinChip([pctPart], input.palette),
+			drop: "context percent",
+		},
+		{
+			text: joinChip([], input.palette),
+			drop: "",
+		},
+	];
 
 	let chip: string | null = null;
 	const shed: string[] = [];
